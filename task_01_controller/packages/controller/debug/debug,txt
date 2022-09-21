@@ -4,9 +4,11 @@ x print out "Hello, world" from controller
 - can calculate error z
 - can control z acceleration
 - can add feedforward term
-- 
--
--
+- can calculate error x 
+- can control x
+- can calculate error y
+- can control y
+
 #kalman_filter
 -
 -
