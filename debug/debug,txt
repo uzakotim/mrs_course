@@ -1,0 +1,16 @@
+x print out "Hello, world" from controller
+
+#controller
+- can calculate error z
+- can control z acceleration
+- can add feedforward term
+- 
+-
+-
+#kalman_filter
+-
+-
+-
+-
+-
+-
