@@ -41,6 +41,14 @@ void Controller::init(const double mass, const UserParams_t user_params, const d
   this->I_z = user_params.param8;
   this->D_z = user_params.param9;
   
+  this->integral_x = 0;
+  this->last_error_x = 0;
+  
+  this->integral_y = 0;
+  this->last_error_y = 0;
+  
+  this->integral_z = 0;
+  this->last_error_z = 0;
   // INITIALIZE YOUR KALMAN FILTER HERE
   // SET THE STATE AND THE COVARIANCE MATRICES AS GLOBAL VARIABLES
 }
@@ -63,6 +71,12 @@ void Controller::reset() {
   this->P_z = 0;
   this->I_z = 0;
   this->D_z = 0;
+
+  this->integral_x = 0;
+  this->last_error_x = 0;
+  
+  this->integral_y = 0;
+  this->last_error_y = 0;
 
   this->integral_z = 0;
   this->last_error_z = 0;
@@ -115,15 +129,28 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   D_z = user_params.param9;
 
 
+
+  double error_x = control_reference.position[0] - uav_state.position[0];
+  double error_y = control_reference.position[1] - uav_state.position[1];
   double error_z = control_reference.position[2] - uav_state.position[2];
+  
+  integral_x += dt*last_error_x;
+  integral_y += dt*last_error_y;
   integral_z += dt*last_error_z;
 
+  double control_x = P_x*error_x + I_x*integral_x + D_x*(error_x-last_error_x)/dt;
+  double control_y = P_y*error_y + I_y*integral_y + D_y*(error_y-last_error_y)/dt;
   double control_z = P_z*error_z + I_z*integral_z + D_z*(error_z-last_error_z)/dt;
-  // std::cout<<"Pz: "<<P_z<<"Iz: "<<I_z<<"Dz: "<<D_z<<'\n';
-  std::cout<<"error_z: "<<error_z<<'\n';
+  
+  std::cout<<"error_x: "<<error_x<<'\n';
+  
+  last_error_x = error_x;
+  last_error_y = error_y;
   last_error_z = error_z;
 
-
+  double ref_acc_x = control_reference.acceleration[0];
+  double ref_acc_y = control_reference.acceleration[1];
+  double ref_acc_z = control_reference.acceleration[2];
 
 
 
@@ -133,9 +160,9 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   // LATER, CALL THE lkfPredict() AND lkfCorrect() FUNCTIONS HERE TO OBTAIN THE FILTERED POSITION STATE
   // DON'T FORGET TO INITIALZE THE STATE DURING THE FIRST ITERATION
 
-  double des_tilt_x  = 0;  // [rad]
-  double des_tilt_y  = 0;  // [rad]
-  double des_accel_z = control_z;  // [m/s^2]
+  double des_tilt_x  = control_x;  // [rad]
+  double des_tilt_y  = control_y;  // [rad]
+  double des_accel_z = control_z+ref_acc_z;  // [m/s^2]
 
   // | ---------------- add gravity compensation ---------------- |
   des_accel_z += _g_;

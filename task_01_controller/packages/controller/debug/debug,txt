@@ -3,8 +3,8 @@ x print out "Hello, world" from controller
 #controller
 x can calculate error z
 x can control z acceleration
-- can add feedforward term
-- can calculate error x 
+x can add feedforward term
+x can calculate error x 
 - can control x
 - can calculate error y
 - can control y
