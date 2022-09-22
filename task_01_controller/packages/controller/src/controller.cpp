@@ -142,7 +142,6 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   double control_y = P_y*error_y + I_y*integral_y + D_y*(error_y-last_error_y)/dt;
   double control_z = P_z*error_z + I_z*integral_z + D_z*(error_z-last_error_z)/dt;
   
-  std::cout<<"error_x: "<<error_x<<'\n';
   
   last_error_x = error_x;
   last_error_y = error_y;
@@ -152,7 +151,8 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   double ref_acc_y = control_reference.acceleration[1];
   double ref_acc_z = control_reference.acceleration[2];
 
-
+  double ref_tilt_x = atan2(control_reference.acceleration[0], control_reference.acceleration[2]+_g_);
+  double ref_tilt_y = atan2(control_reference.acceleration[1], control_reference.acceleration[2]+_g_);
 
 
  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -160,8 +160,8 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   // LATER, CALL THE lkfPredict() AND lkfCorrect() FUNCTIONS HERE TO OBTAIN THE FILTERED POSITION STATE
   // DON'T FORGET TO INITIALZE THE STATE DURING THE FIRST ITERATION
 
-  double des_tilt_x  = control_x;  // [rad]
-  double des_tilt_y  = control_y;  // [rad]
+  double des_tilt_x  = control_x+ref_tilt_x;  // [rad]
+  double des_tilt_y  = control_y+ref_tilt_y;  // [rad]
   double des_accel_z = control_z+ref_acc_z;  // [m/s^2]
 
   // | ---------------- add gravity compensation ---------------- |
