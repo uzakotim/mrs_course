@@ -74,6 +74,25 @@ private:
   double _mass_;  // the UAV mass
   double _g_;     // the gravitational acceleration
 
+  double P_x;
+  double I_x;
+  double D_x;
+  
+  double P_y;
+  double I_y;
+  double D_y;
+  
+  double P_z;
+  double I_z;
+  double D_z;
+
+  double integral_x;
+  double integral_y;
+  double integral_z;
+
+  double last_error_x;
+  double last_error_y;
+  double last_error_z;
   // methods for the user
   ActionHandlers_t action_handlers_;
 };
