@@ -5,14 +5,15 @@ x can calculate error z
 x can control z acceleration
 x can add feedforward term
 x can calculate error x 
-- can control x
-- can calculate error y
-- can control y
+x can control x
+x can calculate error y
+x can control y
 
 #kalman_filter
--
--
--
--
+- design model(A,B)
+- desigm meas model (H)
+- imlepment state update (prediction)
+- implement cov   update (prediction)
+- implement correction
 -
 -

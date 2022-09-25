@@ -7,6 +7,6 @@ param6: 0.1
 param7: 2.0
 param8: 1.0
 param9: 1.5
-param10: 0.0
-param11: 0.0
+param10: 0.01 #0.001
+param11: 0.5   
 param12: 0.0

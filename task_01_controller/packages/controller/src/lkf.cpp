@@ -19,14 +19,26 @@ using namespace Eigen;
 std::tuple<Vector9d, Matrix9x9d> Controller::lkfPredict(const Vector9d &x, const Matrix9x9d &x_cov, const Vector3d &input, const double &dt) {
 
   // x[k+1] = A*x[k] + B*u[k]
+  Matrix9x9d A; 
+  A <<1,0,0,dt,0,0,0.5*dt*dt,0,0,
+      0,1,0,0,dt,0,0,0.5*dt*dt,0,
+      0,0,1,0,0,dt,0,0,0.5*dt*dt,
+      
+      0,0,0,1,0,0,dt,0,0,
+      0,0,0,0,1,0,0,dt,0,
+      0,0,0,0,0,1,0,0,dt,
+
+      0,0,0,0,0,0,1,0,0,
+      0,0,0,0,0,0,0,1,0,
+      0,0,0,0,0,0,0,0,1;
 
   Vector9d   new_x;      // the updated state vector, x[k+1]
   Matrix9x9d new_x_cov;  // the updated covariance matrix
 
   // PUT YOUR CODE HERE
-  // new_x = ...
-  // new_x_cov = ...
-
+  new_x = A*x;
+  new_x_cov = A*x_cov*A.transpose()+Q;
+  
   return {new_x, new_x_cov};
 }
 
@@ -45,10 +57,22 @@ std::tuple<Vector9d, Matrix9x9d> Controller::lkfCorrect(const Vector9d &x, const
   Vector9d   new_x;      // the updated state vector, x[k+1]
   Matrix9x9d new_x_cov;  // the updated covariance matrix
 
-  // PUT YOUR CODE HERE
-  // new_x = ...
-  // new_x_cov = ...
+  Matrix6x9d H;
+  H << 1,0,0,0,0,0,0,0,0,
+       0,1,0,0,0,0,0,0,0,
+       0,0,1,0,0,0,0,0,0,
+       0,0,0,0,0,0,1,0,0,
+       0,0,0,0,0,0,0,1,0,
+       0,0,0,0,0,0,0,0,1;
+  // Kalman Gain
+  Matrix9x6d K = x_cov*H.transpose()*((H*x_cov*H.transpose()+R).inverse()); 
+  // update
+  new_x = x+K*(measurement-H*x);
 
+  Matrix9x9d Id9x9;
+  Id9x9.setIdentity();
+
+  new_x_cov = (Id9x9 - K*H)*x_cov;
   return {new_x, new_x_cov};
 }
 

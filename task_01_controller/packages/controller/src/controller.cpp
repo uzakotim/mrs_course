@@ -51,6 +51,28 @@ void Controller::init(const double mass, const UserParams_t user_params, const d
   this->last_error_z = 0;
   // INITIALIZE YOUR KALMAN FILTER HERE
   // SET THE STATE AND THE COVARIANCE MATRICES AS GLOBAL VARIABLES
+  this->init_state << 0,0,0,0,0,0,0,0,0;
+  this->init_cov.setIdentity();
+  this->init_input << 0,0,1;
+
+  this->Q << user_params.param10,0,0,0,0,0,0,0,0,
+             0,user_params.param10,0,0,0,0,0,0,0,
+             0,0,user_params.param10,0,0,0,0,0,0,
+             0,0,0,user_params.param10,0,0,0,0,0,
+             0,0,0,0,user_params.param10,0,0,0,0,
+             0,0,0,0,0,user_params.param10,0,0,0,
+             0,0,0,0,0,0,user_params.param10,0,0,
+             0,0,0,0,0,0,0,user_params.param10,0,
+             0,0,0,0,0,0,0,0,user_params.param10;
+  this->R << user_params.param11,0,0,0,0,0,
+             0,user_params.param11,0,0,0,0,
+             0,0,user_params.param11,0,0,0,
+             0,0,0,user_params.param11,0,0,
+             0,0,0,0,user_params.param11,0,
+             0,0,0,0,0,user_params.param11;
+
+
+  this->counter = 0;
 }
 
 /**
@@ -82,7 +104,8 @@ void Controller::reset() {
   this->last_error_z = 0;
 
   // IT WOULD BE NICE TO RESET THE KALMAN'S STATE AND COVARIANCE
-
+  this->current_state << 0,0,0,0,0,0,0,0,0;
+  this->current_cov.setIdentity();
   // ALSO, THE NEXT iteration calculateControlSignal() IS GOING TO BE "THE 1ST ITERATION"
 }
 
@@ -114,7 +137,18 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   // | ---------- calculate the output control signals ---------- |
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // THIS IS THE PLACE FOR YOUR CODE
+  if (counter==0)
+  {
+    this->current_state << uav_state.position[0],uav_state.position[1],uav_state.position[2],0,0,0,uav_state.acceleration[0],uav_state.acceleration[1],uav_state.acceleration[2];
+    this->new_x << uav_state.position[0],uav_state.position[1],uav_state.position[2],0,0,0,uav_state.acceleration[0],uav_state.acceleration[1],uav_state.acceleration[2];
+    this->new_cov.setIdentity();
+  }
+  // Vector3d input(des_tilt_x,des_tilt_y,des_accel_z);
+
+  Vector6d measurement;
+  measurement << uav_state.position[0],uav_state.position[1],uav_state.position[2],uav_state.acceleration[0],uav_state.acceleration[1],uav_state.acceleration[2];
+
+  
 
   P_x = user_params.param1;
   I_x = user_params.param2;
@@ -129,10 +163,21 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   D_z = user_params.param9;
 
 
+ 
 
-  double error_x = control_reference.position[0] - uav_state.position[0];
-  double error_y = control_reference.position[1] - uav_state.position[1];
-  double error_z = control_reference.position[2] - uav_state.position[2];
+
+ // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  // LATER, CALL THE lkfPredict() AND lkfCorrect() FUNCTIONS HERE TO OBTAIN THE FILTERED POSITION STATE
+  // DON'T FORGET TO INITIALZE THE STATE DURING THE FIRST ITERATION
+  std::tie(new_x,new_cov) = lkfPredict(new_x,new_cov,init_input,dt);
+  std::tie(new_x,new_cov) = lkfCorrect(new_x,new_cov,measurement,dt);
+  
+  // Controller
+  std::cout<<"new x: "<<new_x<<'\n';
+  double error_x = control_reference.position[0] - new_x(0);
+  double error_y = control_reference.position[1] - new_x(1);
+  double error_z = control_reference.position[2] - new_x(2);
   
   integral_x += dt*last_error_x;
   integral_y += dt*last_error_y;
@@ -147,32 +192,32 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   last_error_y = error_y;
   last_error_z = error_z;
 
-  double ref_acc_x = control_reference.acceleration[0];
-  double ref_acc_y = control_reference.acceleration[1];
   double ref_acc_z = control_reference.acceleration[2];
 
   double ref_tilt_x = atan2(control_reference.acceleration[0], control_reference.acceleration[2]+_g_);
   double ref_tilt_y = atan2(control_reference.acceleration[1], control_reference.acceleration[2]+_g_);
-
-
- // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  // LATER, CALL THE lkfPredict() AND lkfCorrect() FUNCTIONS HERE TO OBTAIN THE FILTERED POSITION STATE
-  // DON'T FORGET TO INITIALZE THE STATE DURING THE FIRST ITERATION
+  // -----------------------------------------------------------
 
   double des_tilt_x  = control_x+ref_tilt_x;  // [rad]
   double des_tilt_y  = control_y+ref_tilt_y;  // [rad]
   double des_accel_z = control_z+ref_acc_z;  // [m/s^2]
 
+
   // | ---------------- add gravity compensation ---------------- |
   des_accel_z += _g_;
   // | --------------- return the control signals --------------- |
+  
+  // |------------------------------------------------------------|
 
   double   body_thrust;
   Matrix3d desired_orientation;
-
   std::tie(body_thrust, desired_orientation) = augmentInputs(des_tilt_x, des_tilt_y, des_accel_z * _mass_, control_reference.heading);
 
+  // counter for initial measurement
+  counter++;
+  // resetting counter
+  if (counter>100)
+      counter = 1;
   return {body_thrust, desired_orientation};
 };
 

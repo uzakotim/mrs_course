@@ -93,6 +93,21 @@ private:
   double last_error_x;
   double last_error_y;
   double last_error_z;
+
+  uint64_t counter;
+
+  Vector9d init_state;
+  Vector9d current_state;
+
+  Vector3d init_input;
+    
+  Matrix9x9d init_cov;
+  Matrix9x9d current_cov;
+  Matrix9x9d Q;
+  Matrix6x6d R;
+
+  Vector9d new_x;
+  Matrix9x9d new_cov;
   // methods for the user
   ActionHandlers_t action_handlers_;
 };
