@@ -51,8 +51,6 @@ void Controller::init(const double mass, const UserParams_t user_params, const d
   this->last_error_z = 0;
   // INITIALIZE YOUR KALMAN FILTER HERE
   // SET THE STATE AND THE COVARIANCE MATRICES AS GLOBAL VARIABLES
-  this->init_state << 0,0,0,0,0,0,0,0,0;
-  this->init_cov.setIdentity();
   this->init_input << 0,0,1;
 
   this->Q << user_params.param10,0,0,0,0,0,0,0,0,
@@ -104,8 +102,8 @@ void Controller::reset() {
   this->last_error_z = 0;
 
   // IT WOULD BE NICE TO RESET THE KALMAN'S STATE AND COVARIANCE
-  this->current_state << 0,0,0,0,0,0,0,0,0;
-  this->current_cov.setIdentity();
+  this->new_x << 0,0,0,0,0,0,0,0,0;
+  this->new_cov.setIdentity();
   // ALSO, THE NEXT iteration calculateControlSignal() IS GOING TO BE "THE 1ST ITERATION"
 }
 
@@ -139,7 +137,6 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   if (counter==0)
   {
-    this->current_state << uav_state.position[0],uav_state.position[1],uav_state.position[2],0,0,0,uav_state.acceleration[0],uav_state.acceleration[1],uav_state.acceleration[2];
     this->new_x << uav_state.position[0],uav_state.position[1],uav_state.position[2],0,0,0,uav_state.acceleration[0],uav_state.acceleration[1],uav_state.acceleration[2];
     this->new_cov.setIdentity();
   }
@@ -174,7 +171,6 @@ std::pair<double, Matrix3d> Controller::calculateControlSignal(const UAVState_t 
   std::tie(new_x,new_cov) = lkfCorrect(new_x,new_cov,measurement,dt);
   
   // Controller
-  std::cout<<"new x: "<<new_x<<'\n';
   double error_x = control_reference.position[0] - new_x(0);
   double error_y = control_reference.position[1] - new_x(1);
   double error_z = control_reference.position[2] - new_x(2);

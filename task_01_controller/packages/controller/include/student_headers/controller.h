@@ -95,14 +95,8 @@ private:
   double last_error_z;
 
   uint64_t counter;
-
-  Vector9d init_state;
-  Vector9d current_state;
-
+  
   Vector3d init_input;
-    
-  Matrix9x9d init_cov;
-  Matrix9x9d current_cov;
   Matrix9x9d Q;
   Matrix6x6d R;
 
