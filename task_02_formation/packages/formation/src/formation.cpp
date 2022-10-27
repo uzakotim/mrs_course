@@ -16,6 +16,27 @@ namespace task_02_formation
 void Formation::init() {
 }
 
+std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(Eigen::Vector3d input,double resolution)
+{   
+    std::vector< std::vector<int> > EXPANSION_DIRECTIONS = {{-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1}, {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1}, {-1, 1, -1},
+                                                            {-1, 1, 0},   {-1, 1, 1},  {0, -1, -1}, {0, -1, 0},  {0, -1, 1}, {0, 0, -1}, {0, 0, 1},
+                                                            {0, 1, -1},   {0, 1, 0},   {0, 1, 1},   {1, -1, -1}, {1, -1, 0}, {1, -1, 1}, {1, 0, -1},
+                                                            {1, 0, 0},    {1, 0, 1},   {1, 1, -1},  {1, 1, 0},   {1, 1, 1}};
+    
+    std::vector< std::vector<int> > EXPANSION_DIRECTIONS_EASY = {{-1, -1, -1}, {-1, -1, 1},
+                                                                {-1, 1, -1},{-1, 1, 1},   
+                                                                {1, -1, -1},{1, -1, 1}, 
+                                                                {1, 1, -1},{1, 1, 1}};
+    std::vector<Eigen::Vector3d> points;
+    points.push_back(input);
+    for (auto vertex: EXPANSION_DIRECTIONS)
+    {
+        Eigen::Vector3d point;
+        point << input(0)+resolution*vertex[0],input(1)+resolution*vertex[1], input(2)+resolution*vertex[2];
+        points.push_back(point);
+    }
+    return points;
+}
 //}
 
 /* getPathsReshapeFormation() //{ */
@@ -52,8 +73,11 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
   const double resolution = 0.6;
   astar::Astar astar(resolution);
    // initialize obstacles
-  std::set<astar::Cell> obstacles;
-
+  std::set<astar::Cell> obstacles_fixed;
+  std::set<astar::Cell> obstacles_total;
+  Eigen::Vector3d point_temp;
+  std::vector<Eigen::Vector3d> inflated_obstacles; 
+  std::vector<Eigen::Vector3d> inflated_sec_obstacles; 
   // for each UAV
   for (int i = 0; i < n_uavs; i++) {
 
@@ -61,28 +85,61 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
     std::vector<Eigen::Vector3d> path;
 
     // path made of two waypoints: I -> F
+    std::set<astar::Cell> obstacles_temp = {};
+    int j = i;
+    while(j <n_uavs-1)
+    {
+      point_temp << initial_states[j+1](0), initial_states[j+1](1), initial_states[j+1](2);
+      inflated_obstacles = Formation::createMinkowskyPoints(point_temp,resolution);
+      for (Eigen::Vector3d obst: inflated_obstacles)
+      {
+        inflated_sec_obstacles = Formation::createMinkowskyPoints(obst,resolution);
+        for (Eigen::Vector3d obst_sec: inflated_sec_obstacles)
+        {
+          obstacles_temp.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
+        }
+      }
+      point_temp << final_states[j+1](0), final_states[j+1](1), final_states[j+1](2);
+      inflated_obstacles = Formation::createMinkowskyPoints(point_temp,resolution);
+      for (Eigen::Vector3d obst: inflated_obstacles)
+      {
+        inflated_sec_obstacles = Formation::createMinkowskyPoints(obst,resolution);
+        for (Eigen::Vector3d obst_sec: inflated_sec_obstacles)
+        {
+          obstacles_temp.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
+        }
+      }
+      j++;
+    }
+    Eigen::Vector3d start,goal;
+    start << initial_states[i](0), initial_states[i](1), initial_states[i](2);
+    goal  << final_states[i](0),final_states[i](1),final_states[i](2);
 
-    // path.push_back(initial_states[i]);
-    // path.push_back(final_states[i]);
+    std::set<astar::Cell> obstacles_total{};
+    std::merge(obstacles_fixed.begin(), obstacles_fixed.end(),
+                obstacles_temp.begin(), obstacles_temp.end(),
+                std::inserter(obstacles_total, obstacles_total.begin()));
+    path = astar.plan(start, goal, obstacles_total);
 
-    astar::Position start(initial_states[i](0), initial_states[i](1), initial_state[i](2));
-    astar::Position goal(final_states[i](0),final_states[i](1),final_states[i](2));
 
-    std::optional<std::list<astar::Position>> path = astar.plan(start, goal, obstacles);
- 
-    if (path) {
+    if (path.size()>0) {
       printf("path found:\n");
       paths.push_back(path);
     } else {
       printf("path not found\n");
-      return;
-    } 
+      return paths;
+    }
+
     for (Eigen::Vector3d point : path)
     {
-        std::vector<Eigen::Vector3d> inflated_obstacles = calculateMinkowskiSum(point,resolution);
+        inflated_obstacles = Formation::createMinkowskyPoints(point,resolution);
         for (Eigen::Vector3d obst: inflated_obstacles)
         {
-           obstacles.insert(astar.toGrid(obst(0), obst(1), obst(2)));
+          inflated_sec_obstacles = Formation::createMinkowskyPoints(obst,resolution);
+          for (Eigen::Vector3d obst_sec: inflated_sec_obstacles)
+          {
+              obstacles_fixed.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
+          }
         }
     }
      

@@ -18,6 +18,14 @@ public:
   void init();
 
   /**
+   * @brief Function to create points around the main point
+   * 
+   * @param input 
+   * @param resolution 
+   * @return std::vector<Eigen::Vector3d> 
+   */
+  std::vector<Eigen::Vector3d> createMinkowskyPoints(Eigen::Vector3d input,double resolution);
+  /**
    * @brief This method calculates paths for each UAV from an initial state towards a desired final state.
    * This method is supposed to be filled in by the student.
    *

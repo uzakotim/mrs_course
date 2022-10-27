@@ -380,11 +380,11 @@ public:
     resolution_ = resolution;
   }
 
-  Cell toGrid(const Position& pos) const {
+  Cell toGrid(const Eigen::Vector3d& pos) const {
 
-    int x_grid_int = (int)round(((double)pos.x() - center_x_) / resolution_);
-    int y_grid_int = (int)round(((double)pos.y() - center_y_) / resolution_);
-    int z_grid_int = (int)round(((double)pos.z() - center_z_) / resolution_);
+    int x_grid_int = (int)round(((double)pos(0) - center_x_) / resolution_);
+    int y_grid_int = (int)round(((double)pos(1) - center_y_) / resolution_);
+    int z_grid_int = (int)round(((double)pos(2) - center_z_) / resolution_);
 
     assert(x_grid_int > std::numeric_limits<short>::lowest() && x_grid_int < std::numeric_limits<short>::max());
     assert(y_grid_int > std::numeric_limits<short>::lowest() && y_grid_int < std::numeric_limits<short>::max());
@@ -398,17 +398,20 @@ public:
   }
 
   Cell toGrid(const double& x, const double& y, const double& z) const {
-
-    return toGrid(Position(x, y, z));
+    
+    Eigen::Vector3d point;
+    point << x,y,z;
+    return toGrid(point);
   }
 
-  Position fromGrid(const Cell& cell) const {
+  Eigen::Vector3d fromGrid(const Cell& cell) const {
 
-    double x = ((double)cell.x()) * resolution_ + center_x_;
-    double y = ((double)cell.y()) * resolution_ + center_y_;
-    double z = ((double)cell.z()) * resolution_ + center_z_;
+    Eigen::Vector3d Position;
+    Position<< ((double)cell.x()) * resolution_ + center_x_,
+               ((double)cell.y()) * resolution_ + center_y_,
+               ((double)cell.z()) * resolution_ + center_z_;
 
-    return Position(x, y, z);
+    return Position;
   }
 };
 
@@ -502,7 +505,7 @@ public:
    *
    * @return A* grid cell
    */
-  Cell toGrid(const Position& pos) const {
+  Cell toGrid(const Eigen::Vector3d& pos) const {
     return grid_.toGrid(pos);
   }
 
@@ -526,7 +529,7 @@ public:
    *
    * @return grid cell
    */
-  Position fromGrid(const Cell& cell) const {
+  Eigen::Vector3d fromGrid(const Cell& cell) const {
     return grid_.fromGrid(cell);
   }
 
@@ -551,7 +554,7 @@ public:
    *
    * @return the path from start to goal as an optional list of real-world Positions
    */
-  std::optional<std::list<Position>> plan(const Position& start_pos, const Position& goal_pos, const std::set<Cell>& obstacles) const {
+  std::vector<Eigen::Vector3d> plan(const Eigen::Vector3d& start_pos, const Eigen::Vector3d & goal_pos, const std::set<Cell>& obstacles) const {
 
     Cell from_cell = toGrid(start_pos);
     Cell to_cell   = toGrid(goal_pos);
@@ -635,7 +638,7 @@ public:
 
     Cell current = to_cell;
 
-    std::list<Position> path;
+    std::vector<Eigen::Vector3d> path;
 
     path.push_back(fromGrid(to_cell));
 
