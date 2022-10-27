@@ -29,16 +29,18 @@ from 2 to 10 drones
 : set of final positions
 - can create paths in priority order
 - can plan sequentially;
-- Minkowski sum
+x - Minkowski sum
 - plan path and put it to the obstacle space
 - make sure that drones do not get closer than 1.2 m
-- resolution is 0.6 meters - hence i need a cube with +3*resolution cell
+- resolution is 0.6 meters - hence i need a cube with +2*resolution cell
 - use given a* solver
 
-- find right resolution < 3
-- resolution > small value - A* is slow and path is very dense
+x - find right resolution < 3 ------> 0.6
+x - resolution > small value - A* is slow and path is very dense
+
 - take the path and process it to make it shorter
 - delete vertex if no collisions by segments
+
 
 - insert obstacle cell 
 --------------------------------

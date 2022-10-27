@@ -48,6 +48,11 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
 
   // initialize the vector of paths
   std::vector<std::vector<Eigen::Vector3d>> paths;
+  // set resolution
+  const double resolution = 0.6;
+  astar::Astar astar(resolution);
+   // initialize obstacles
+  std::set<astar::Cell> obstacles;
 
   // for each UAV
   for (int i = 0; i < n_uavs; i++) {
@@ -56,10 +61,31 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
     std::vector<Eigen::Vector3d> path;
 
     // path made of two waypoints: I -> F
-    path.push_back(initial_states[i]);
-    path.push_back(final_states[i]);
 
-    paths.push_back(path);
+    // path.push_back(initial_states[i]);
+    // path.push_back(final_states[i]);
+
+    astar::Position start(initial_states[i](0), initial_states[i](1), initial_state[i](2));
+    astar::Position goal(final_states[i](0),final_states[i](1),final_states[i](2));
+
+    std::optional<std::list<astar::Position>> path = astar.plan(start, goal, obstacles);
+ 
+    if (path) {
+      printf("path found:\n");
+      paths.push_back(path);
+    } else {
+      printf("path not found\n");
+      return;
+    } 
+    for (Eigen::Vector3d point : path)
+    {
+        std::vector<Eigen::Vector3d> inflated_obstacles = calculateMinkowskiSum(point,resolution);
+        for (Eigen::Vector3d obst: inflated_obstacles)
+        {
+           obstacles.insert(astar.toGrid(obst(0), obst(1), obst(2)));
+        }
+    }
+     
   }
 
   return paths;
