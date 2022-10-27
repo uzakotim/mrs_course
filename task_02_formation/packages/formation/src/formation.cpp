@@ -160,7 +160,7 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
   action_handlers.visualizeCube(Position_t{target_position[0], target_position[1], target_position[2]}, Color_t{0.0, 0.0, 1.0, 1.0}, 1.0);
 
   // | ------------------- Put your code here ------------------- |
-
+  
   // do nothing while the formation is in motion
   if (!formation_state.is_static) {
     return;

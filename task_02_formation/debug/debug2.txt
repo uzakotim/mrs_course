@@ -1,0 +1,97 @@
+1) 10 points - reshaping formation function in isolation
+reshaping_test - reshaping_evaluate - reshaping_debug.yaml  - reshaping_test
+shoud run less than 60 - 80 seconds
+
+2) 15 points - passing following robot - easy simulation 
+3) 25 points - passing following robot - difficult simulation - with noise filtering of ranging measurements and robot runs from you
+
+1 method - averaging
+2 method - better optimisation - Levenberg Manguard
+
+-----------------
+|total 35 points|
+-----------------
+
+following the robot
+state machine 
+
+--------------------------------
+Multilateration
+
+- plot circle around drone1
+- plot circle around drone2
+- plot circle around drone3
+- find the intersection point
+
+
+- in practice - optimisation task
+- we find the point the closest to the intersection
+
+---> approximate position of UGV
+
+---> improve the simple approach
+
+
+--------------------------------
+Formation Reshaping
+
+moving with formation closest to the UGV
+
+- not in line
+
+given: positions of drones XYZ
+from 2 to 10 drones
+
+: set of final positions
+- can create paths in priority order
+
+- sequential planning;
+- plan path and put it to the obstacle space
+
+- make sure that drones do not get closer than 1.2 m
+
+- use given a* solver
+
+- find right resolution < 3
+- resolution > small value - A* is slow and path is very dense
+- take the path and process it to make it shorter
+- delete vertex if no collisions by segments
+
+- insert obstacle cell 
+
+--------------------------------
+Moving formation is done with virtual leader method
+- insure that formation has proper shape to avoid collisions
+- already done
+
+--------------------------------
+Constraint on formation:
+- formation is supposed to be compact
+- local formation
+
+-------------------------------
+decide what you gonna do, call change formation shape, change root
+
+
+option 1) scanning the whole square , process, get to the sopt
+option 2) systematic scanning, then decide on following method
+get close to robot
+3) many other methods
+ follow the robot for a minute
+
+while drones are in motion, check if drones are in motion with flag
+
+KF const velocity of robot
+
+-------------------------------
+comup with your own idea
+
+--------------------------------
+collision avoidance
+
+depends on resolution 
+iflate obstacles by Minkowski sum
+
+
+if std::isfinite( double ...) 
+    number is safe
