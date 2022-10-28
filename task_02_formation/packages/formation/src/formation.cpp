@@ -21,15 +21,17 @@ std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(Eigen::Vector3d in
     std::vector< std::vector<int> > EXPANSION_DIRECTIONS = {{-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1}, {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1}, {-1, 1, -1},
                                                             {-1, 1, 0},   {-1, 1, 1},  {0, -1, -1}, {0, -1, 0},  {0, -1, 1}, {0, 0, -1}, {0, 0, 1},
                                                             {0, 1, -1},   {0, 1, 0},   {0, 1, 1},   {1, -1, -1}, {1, -1, 0}, {1, -1, 1}, {1, 0, -1},
-                                                            {1, 0, 0},    {1, 0, 1},   {1, 1, -1},  {1, 1, 0},   {1, 1, 1}};
-    
+                                                            {1, 0, 0},    {1, 0, 1},   {1, 1, -1},  {1, 1, 0},   {1, 1, 1}
+                                                            };
+    std::vector< std::vector<int> > EXPANSION_DIRECTIONS_HARD = {{ -2 , -2 , -2 },{ -2 , -2 , -1 },{ -2 , -2 , 0 },{ -2 , -2 , 1 },{ -2 , -2 , 2 },{ -2 , -1 , -2 },{ -2 , -1 , -1 },{ -2 , -1 , 0 },{ -2 , -1 , 1 },{ -2 , -1 , 2 },{ -2 , 0 , -2 },{ -2 , 0 , -1 },{ -2 , 0 , 0 },{ -2 , 0 , 1 },{ -2 , 0 , 2 },{ -2 , 1 , -2 },{ -2 , 1 , -1 },{ -2 , 1 , 0 },{ -2 , 1 , 1 },{ -2 , 1 , 2 },{ -2 , 2 , -2 },{ -2 , 2 , -1 },{ -2 , 2 , 0 },{ -2 , 2 , 1 },{ -2 , 2 , 2 },{ -1 , -2 , -2 },{ -1 , -2 , -1 },{ -1 , -2 , 0 },{ -1 , -2 , 1 },{ -1 , -2 , 2 },{ -1 , -1 , -2 },{ -1 , -1 , -1 },{ -1 , -1 , 0 },{ -1 , -1 , 1 },{ -1 , -1 , 2 },{ -1 , 0 , -2 },{ -1 , 0 , -1 },{ -1 , 0 , 0 },{ -1 , 0 , 1 },{ -1 , 0 , 2 },{ -1 , 1 , -2 },{ -1 , 1 , -1 },{ -1 , 1 , 0 },{ -1 , 1 , 1 },{ -1 , 1 , 2 },{ -1 , 2 , -2 },{ -1 , 2 , -1 },{ -1 , 2 , 0 },{ -1 , 2 , 1 },{ -1 , 2 , 2 },{ 0 , -2 , -2 },{ 0 , -2 , -1 },{ 0 , -2 , 0 },{ 0 , -2 , 1 },{ 0 , -2 , 2 },{ 0 , -1 , -2 },{ 0 , -1 , -1 },{ 0 , -1 , 0 },{ 0 , -1 , 1 },{ 0 , -1 , 2 },{ 0 , 0 , -2 },{ 0 , 0 , -1 },{ 0 , 0 , 0 },{ 0 , 0 , 1 },{ 0 , 0 , 2 },{ 0 , 1 , -2 },{ 0 , 1 , -1 },{ 0 , 1 , 0 },{ 0 , 1 , 1 },{ 0 , 1 , 2 },{ 0 , 2 , -2 },{ 0 , 2 , -1 },{ 0 , 2 , 0 },{ 0 , 2 , 1 },{ 0 , 2 , 2 },{ 1 , -2 , -2 },{ 1 , -2 , -1 },{ 1 , -2 , 0 },{ 1 , -2 , 1 },{ 1 , -2 , 2 },{ 1 , -1 , -2 },{ 1 , -1 , -1 },{ 1 , -1 , 0 },{ 1 , -1 , 1 },{ 1 , -1 , 2 },{ 1 , 0 , -2 },{ 1 , 0 , -1 },{ 1 , 0 , 0 },{ 1 , 0 , 1 },{ 1 , 0 , 2 },{ 1 , 1 , -2 },{ 1 , 1 , -1 },{ 1 , 1 , 0 },{ 1 , 1 , 1 },{ 1 , 1 , 2 },{ 1 , 2 , -2 },{ 1 , 2 , -1 },{ 1 , 2 , 0 },{ 1 , 2 , 1 },{ 1 , 2 , 2 },{ 2 , -2 , -2 },{ 2 , -2 , -1 },{ 2 , -2 , 0 },{ 2 , -2 , 1 },{ 2 , -2 , 2 },{ 2 , -1 , -2 },{ 2 , -1 , -1 },{ 2 , -1 , 0 },{ 2 , -1 , 1 },{ 2 , -1 , 2 },{ 2 , 0 , -2 },{ 2 , 0 , -1 },{ 2 , 0 , 0 },{ 2 , 0 , 1 },{ 2 , 0 , 2 },{ 2 , 1 , -2 },{ 2 , 1 , -1 },{ 2 , 1 , 0 },{ 2 , 1 , 1 },{ 2 , 1 , 2 },{ 2 , 2 , -2 },{ 2 , 2 , -1 },{ 2 , 2 , 0 },{ 2 , 2 , 1 },{ 2 , 2 , 2 }
+                                                            };
     std::vector< std::vector<int> > EXPANSION_DIRECTIONS_EASY = {{-1, -1, -1}, {-1, -1, 1},
                                                                 {-1, 1, -1},{-1, 1, 1},   
                                                                 {1, -1, -1},{1, -1, 1}, 
                                                                 {1, 1, -1},{1, 1, 1}};
     std::vector<Eigen::Vector3d> points;
     points.push_back(input);
-    for (auto vertex: EXPANSION_DIRECTIONS)
+    for (auto vertex: EXPANSION_DIRECTIONS_HARD)
     {
         Eigen::Vector3d point;
         point << input(0)+resolution*vertex[0],input(1)+resolution*vertex[1], input(2)+resolution*vertex[2];
@@ -104,21 +106,23 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
       inflated_starts = Formation::createMinkowskyPoints(point_temp,resolution);
       for (Eigen::Vector3d obst: inflated_starts)
       {
-        inflated_sec_starts = Formation::createMinkowskyPoints(obst,resolution);
-        for (Eigen::Vector3d obst_sec: inflated_sec_starts)
-        {
-          obstacles_temp.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
-        }
+        obstacles_temp.insert(astar.toGrid(obst(0), obst(1), obst(2)));
+        // inflated_sec_starts = Formation::createMinkowskyPoints(obst,resolution);
+        // for (Eigen::Vector3d obst_sec: inflated_sec_starts)
+        // {
+          // obstacles_temp.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
+        // }
       }
       point_temp << final_states[j+1](0), final_states[j+1](1), final_states[j+1](2);
       inflated_goals = Formation::createMinkowskyPoints(point_temp,resolution);
       for (Eigen::Vector3d obst: inflated_goals)
       {
-        inflated_sec_goals = Formation::createMinkowskyPoints(obst,resolution);
-        for (Eigen::Vector3d obst_sec: inflated_sec_goals)
-        {
-          obstacles_temp.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
-        }
+          obstacles_temp.insert(astar.toGrid(obst(0), obst(1), obst(2)));
+        // inflated_sec_goals = Formation::createMinkowskyPoints(obst,resolution);
+        // for (Eigen::Vector3d obst_sec: inflated_sec_goals)
+        // {
+          // obstacles_temp.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
+        // }
       }
       j++;
     }
@@ -146,11 +150,12 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
         inflated_obstacles = Formation::createMinkowskyPoints(point,resolution);
         for (Eigen::Vector3d obst: inflated_obstacles)
         {
-          inflated_sec_obstacles = Formation::createMinkowskyPoints(obst,resolution);
-          for (Eigen::Vector3d obst_sec: inflated_sec_obstacles)
-          {
-              obstacles_fixed.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
-          }
+            obstacles_fixed.insert(astar.toGrid(obst(0), obst(1), obst(2)));
+          // inflated_sec_obstacles = Formation::createMinkowskyPoints(obst,resolution);
+          // for (Eigen::Vector3d obst_sec: inflated_sec_obstacles)
+          // {
+              // obstacles_fixed.insert(astar.toGrid(obst_sec(0), obst_sec(1), obst_sec(2)));
+          // }
         }
     }
      
