@@ -78,6 +78,10 @@ private:
   // | -------- Put any custom variables and methods here ------- |
 
   int user_defined_variable_ = 0;
+  int leader_step_counter_ = 1;
+  Eigen::Vector3d cur_vleader;
+  Eigen::Vector3d prev_vleader;
+
 };
 
 }  // namespace task_02_formation

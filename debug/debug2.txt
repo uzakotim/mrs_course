@@ -17,32 +17,23 @@ state machine
 
 --------------------------------
 --------------------------------
-Formation Reshaping
+DONE - Formation Reshaping
 
 moving with formation closest to the UGV
 
-- not in line
-
 given: positions of drones XYZ
 from 2 to 10 drones
-
-: set of final positions
-- can create paths in priority order
-- can plan sequentially;
+x - set of final positions
+x - can create paths in priority order
+x - can plan sequentially;
 x - Minkowski sum
-- plan path and put it to the obstacle space
-- make sure that drones do not get closer than 1.2 m
-- resolution is 0.6 meters - hence i need a cube with +2*resolution cell
-- use given a* solver
-
+x - plan path and put it to the obstacle space
+x - make sure that drones do not get closer than 1.2 m
+x - resolution is 0.6 meters - hence i need a cube with +2*resolution cell
+x - use given a* solver
 x - find right resolution < 3 ------> 0.6
 x - resolution > small value - A* is slow and path is very dense
-
-- take the path and process it to make it shorter
-- delete vertex if no collisions by segments
-
-
-- insert obstacle cell 
+x - insert obstacle cell 
 --------------------------------
 Multilateration
 
@@ -59,6 +50,12 @@ Multilateration
 
 ---> improve the simple approach
 
+-------------------------------
+Motion
+
+- can move to left cell in line
+- can move to up cell in line
+- can plan path to target
 
 
 --------------------------------
