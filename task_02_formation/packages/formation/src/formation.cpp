@@ -70,7 +70,7 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
   // initialize the vector of paths
   std::vector<std::vector<Eigen::Vector3d>> paths;
   // set resolution
-  const double resolution = 0.6;
+  const double resolution = 0.7;
   astar::Astar astar(resolution);
    // initialize obstacles
   std::set<astar::Cell> obstacles_fixed;
