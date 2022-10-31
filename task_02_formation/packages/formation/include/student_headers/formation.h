@@ -77,10 +77,11 @@ public:
 private:
   // | -------- Put any custom variables and methods here ------- |
 
-  int user_defined_variable_ = 0;
-  int leader_step_counter_ = 1;
-  Eigen::Vector3d cur_vleader;
-  Eigen::Vector3d prev_vleader;
+  int current_stage_ = 0;
+  int count_data_ = 0;
+  std::deque<Eigen::Vector3d> measurements;
+  Eigen::Vector3d avg_target;
+  bool xTrueYfalse = true;
 
 };
 

@@ -1,5 +1,5 @@
 #include <student_headers/formation.h>
-
+#define RESHAPING_SIZE 10
 namespace task_02_formation
 {
 
@@ -14,8 +14,6 @@ namespace task_02_formation
  * Use this method to do any heavy pre-computations.
  */
 void Formation::init() {
-  cur_vleader << 0,0,3;
-  prev_vleader<< 0,0,0;
 }
 
 std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(Eigen::Vector3d input,double resolution)
@@ -170,6 +168,7 @@ Eigen::Vector3d Formation::multilateration(const std::vector<Eigen::Vector3d> &p
   const int N = int(positions.size());
 
   Eigen::MatrixXd J = Eigen::MatrixXd::Zero(N, 3);
+  Eigen::MatrixXd I = Eigen::MatrixXd::Identity(3, 3);
   Eigen::MatrixXd g = Eigen::VectorXd::Zero(N);
 
   // the solution... initialized as (0, 0, 0)^T, is it a good initialization?
@@ -190,7 +189,7 @@ Eigen::Vector3d Formation::multilateration(const std::vector<Eigen::Vector3d> &p
     }
 
     // do the Gauss-Newton iteration
-    s = s - (J.transpose() * J).inverse() * J.transpose() * g;
+    s = s - (J.transpose() * J + 0.5*I).inverse() * J.transpose() * g;
   }
 
   return s;
@@ -231,7 +230,6 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
   }
 
   Eigen::Vector3d target_position = multilateration(abs_positions, ranging.distances);
-
   // | --------------- Publishing CUBE Rviz marker -------------- |
   // * you can use this function repeatedly with different names to visualize other stuff
   // * the args are:
@@ -246,25 +244,30 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
   if (!formation_state.is_static) {
     return;
   }
-
-  std::cout<<"Current state"<<std::endl;
-  std::cout<<user_defined_variable_<<std::endl;
         
   std::vector<std::vector<Eigen::Vector3d>> paths = {};
 
   // this is an example of a "state machine"
-  switch (user_defined_variable_) {
+  switch (current_stage_) {
+
+    // state machine:
+    // 0 - forming triangle
+    // 1 - captuing data
+    // 2 - deciding which direction to go
+    // 3 - reshaping
+    // 4 - flying to destination
+
     // in the fist state, reorganize the formation into a column
     case 0: {
-      printf("0: forming column\n");
+      printf("0: forming triangle\n");
 
-      std::vector<Eigen::Vector3d> formation_line;
-      formation_line.push_back(Eigen::Vector3d(-3.0, 0.0, 3.0));
-      formation_line.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      formation_line.push_back(Eigen::Vector3d(3.0, 0.0, 3.0));
+      std::vector<Eigen::Vector3d> formation_triangle;
+      formation_triangle.push_back(Eigen::Vector3d(-2.5, 0.0, 3.0));
+      formation_triangle.push_back(Eigen::Vector3d(0.0, 2.5, 3.0));
+      formation_triangle.push_back(Eigen::Vector3d(2.5, 0.0, 3.0));
 
       // plan paths to reshape the formation
-      std::vector<std::vector<Eigen::Vector3d>> paths = getPathsReshapeFormation(formation_state.followers, formation_line);
+      std::vector<std::vector<Eigen::Vector3d>> paths = Formation::getPathsReshapeFormation(formation_state.followers, formation_triangle);
 
       // tell the formation to reshape the formation
       // this will make the UAVs move, the flag "formation_state.is_static" will become false
@@ -275,93 +278,133 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
         return;
       }
 
-      user_defined_variable_++;
-
+      current_stage_++;
+      count_data_ = 0;
+      measurements = {};
+      avg_target = {};
       break;
     }
 
     case 1: {
 
-      printf("1: leader following\n");
-      // tell the virtual leader to move to the center of the arena
-      bool success = action_handlers.setLeaderPosition(Eigen::Vector3d(0, 0, 3));
-
-      if (!success) {
-        printf("something went wrong moving the leader\n");
-        return;
+      printf("1: capturing data\n");
+      measurements.push_back(target_position);
+      count_data_ ++;
+      if (count_data_>10)
+      {
+        double total_x{0.0};
+        double total_y{0.0};
+        double total_z{0.0};
+        for (Eigen::Vector3d target : measurements){
+          total_x+=target(0);
+          total_y+=target(1);
+          total_z+=target(2);
+        }
+        total_x /= measurements.size();
+        total_y /= measurements.size();
+        total_z /= measurements.size();
+        avg_target << total_x,total_y,total_z;
+        std::cout<<"avg x : "<<total_x<<" y: "<<total_y<<" z: "<<total_z<<std::endl;
+        current_stage_++;
       }
-
-      user_defined_variable_++;
-
+      else 
+      {
+        current_stage_=1;
+      }
       break;
+//----------------------------------------------------------------
     }
+    
+
     case 2: {
-      printf("2: deciding direction to go\n");
+     
 
-      bool success = action_handlers.setLeaderPosition(Eigen::Vector3d(10.0 * (user_defined_variable_ - 2), 0, 3));
+      printf("2: deciding which way to go\n");
 
-      if (!success) {
-        printf("something went wrong moving the leader\n");
-        return;
+      if (avg_target(0)>avg_target(1))
+      {
+        xTrueYfalse = true;
+      }
+      else 
+      {
+        xTrueYfalse = false;
       }
 
-      user_defined_variable_++;
+      current_stage_++;
 
       break;
-      // cur_vleader = Eigen::Vector3d(10.0 * leader_step_counter_,0, 3); // horizontal
-      // std::cout<<"Current leader position: "<<cur_vleader(0)<<" "<<cur_vleader(1)<<" "<<cur_vleader(2)<<'\n';
-      // std::cout<<"Prev leader position: "<<prev_vleader(0)<<" "<<prev_vleader(1)<<" "<<prev_vleader(2)<<'\n';
       
-      // std::vector<Eigen::Vector3d> formation_line_horizontal = {};
-      // formation_line_horizontal.push_back(Eigen::Vector3d(-3.0, 0.0, 3.0));
-      // formation_line_horizontal.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      // formation_line_horizontal.push_back(Eigen::Vector3d(3.0, 0.0, 3.0));
-
-      // std::vector<Eigen::Vector3d> formation_line_vertical = {};
-      // formation_line_vertical.push_back(Eigen::Vector3d(0.0, -3.0, 3.0));
-      // formation_line_vertical.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      // formation_line_vertical.push_back(Eigen::Vector3d(0.0, 3.0, 3.0));
-
-      // std::vector<Eigen::Vector3d> formation_triangle = {};
-      // formation_triangle.push_back(Eigen::Vector3d(-3.0,0.0, 3.0));
-      // formation_triangle.push_back(Eigen::Vector3d(0.0, 3.0, 3.0));
-      // formation_triangle.push_back(Eigen::Vector3d(3.0, 0.0, 3.0));
-
-      // if ((std::abs(cur_vleader(1)-prev_vleader(1))>5) && (std::abs(cur_vleader(0)-prev_vleader(0))<0.5))
-      // {
-      //   //leader moved along y axis
-      //   paths = getPathsReshapeFormation(formation_state.followers, formation_line_vertical);
-      // } else if ((std::abs(cur_vleader(0)-prev_vleader(0))>5) && (std::abs(cur_vleader(1)-prev_vleader(1))<0.5))
-      // { // leader moved along x axis
-      //   paths = getPathsReshapeFormation(formation_state.followers, formation_line_horizontal);
-      // }
-      // else 
-      // {
-      //   paths = getPathsReshapeFormation(formation_state.followers, formation_triangle);
-      // }
-
-      // bool success = action_handlers.reshapeFormation(paths);
-
-      // if (!success) {
-      //   printf("something went wrong while reshaping the formation\n");
-      //   return;
-      // }
-      // leader_step_counter_++;
     }
     case 3: {
       printf("3: reshaping\n");
-      user_defined_variable_++;
+
+      std::vector<Eigen::Vector3d> formation_line_x = {};
+      formation_line_x.push_back(Eigen::Vector3d(-2.4, 0.0, 3.0));
+      formation_line_x.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
+      formation_line_x.push_back(Eigen::Vector3d(2.4, 0.0, 3.0));
+
+      std::vector<Eigen::Vector3d> formation_line_y= {};
+      formation_line_y.push_back(Eigen::Vector3d(0.0, -2.4, 3.0));
+      formation_line_y.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
+      formation_line_y.push_back(Eigen::Vector3d(0.0, 2.4, 3.0));
+      
+      std::vector<std::vector<Eigen::Vector3d>> paths = Formation::getPathsReshapeFormation(formation_state.followers, formation_line_y);
+      if (xTrueYfalse)
+      {
+        std::vector<std::vector<Eigen::Vector3d>> paths = Formation::getPathsReshapeFormation(formation_state.followers, formation_line_x);
+      } 
+      // tell the formation to reshape the formation
+      // this will make the UAVs move, the flag "formation_state.is_static" will become false
+      bool success = action_handlers.reshapeFormation(paths);
+
+      if (!success) {
+        printf("something went wrong while reshaping the formation\n");
+        return;
+      }
+
+      current_stage_++;
 
       break;
     }
     case 4: {
-      printf("4: moving to the desitnation\n");
-      user_defined_variable_-=2;
+      printf("4: flying to destination\n");
+    // tell the virtual leader to move to the center of the arena
+
+      // i need difference between current goal and current leader pose
+      double x_dif {0.0};
+      double y_dif {0.0};
+
+      double leader_pose_x = formation_state.virtual_leader(0);
+      double leader_pose_y = formation_state.virtual_leader(1);
+
+      double goal_x = avg_target(0);
+      double goal_y = avg_target(1);
+
+      x_dif = goal_x - leader_pose_x;
+      y_dif = goal_y - leader_pose_y;
+      int x_step = x_dif/10;
+      int y_step = y_dif/10;
+      bool success = false;
+      
+      if (xTrueYfalse)
+      {
+        success = action_handlers.setLeaderPosition(Eigen::Vector3d(10.0*x_step, 0, 3)); // relative to current position vector
+      }
+      else 
+      {
+        success = action_handlers.setLeaderPosition(Eigen::Vector3d(0, 10.0*y_step, 3)); // relative to current position vector
+      }
+      if (!success) {
+        printf("something went wrong moving the leader\n");
+        return;
+      }
+
+      current_stage_=0;
+
       break;
     }
     default:
     {
-      // cur_vleader = Eigen::Vector3d(0,10.0 * leader_step_counter_, 3); -- vertical
       break;
     }
   }
