@@ -14,6 +14,20 @@ namespace task_02_formation
  * Use this method to do any heavy pre-computations.
  */
 void Formation::init() {
+      formation_triangle.push_back(Eigen::Vector3d(-4.5, 0.0, 3.0));
+      formation_triangle.push_back(Eigen::Vector3d(0.0, 4.5, 3.0));
+      formation_triangle.push_back(Eigen::Vector3d(4.5, 0.0, 3.0));
+
+
+      formation_line_x.push_back(Eigen::Vector3d(-3.0, 0.0, 3.0));
+      formation_line_x.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
+      formation_line_x.push_back(Eigen::Vector3d(3.0, 0.0, 3.0));
+
+      formation_line_y.push_back(Eigen::Vector3d(0.0, 3.0, 3.0));
+      formation_line_y.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
+      formation_line_y.push_back(Eigen::Vector3d(0.0, 3.0, 3.0)); 
+
+
 }
 
 std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(Eigen::Vector3d input,double resolution)
@@ -123,7 +137,7 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
 
 
     if (path.size()>0) {
-      // printf("path found\n");
+      printf("path found\n");
       paths.push_back(path);
     } else {
       printf("path not found\n");
@@ -236,7 +250,7 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
   //    Position (x, y, z)
   //    Color (r, g, b, alpha), alpha = 1.0 is fully visible
   //    Size (meters)
-  // action_handlers.visualizeCube(Position_t{target_position[0], target_position[1], target_position[2]}, Color_t{0.0, 0.0, 1.0, 1.0}, 1.0);
+  action_handlers.visualizeCube(Position_t{target_position(0), target_position(1), target_position(2)}, Color_t{0.0, 0.0, 1.0, 1.0}, 1.0);
 
   // | ------------------- Put your code here ------------------- |
   
@@ -260,15 +274,10 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
     // in the fist state, reorganize the formation into a column
     case 0: {
       printf("0: forming triangle\n");
-
-      std::vector<Eigen::Vector3d> formation_triangle;
-      formation_triangle.push_back(Eigen::Vector3d(-2.5, 0.0, 3.0));
-      formation_triangle.push_back(Eigen::Vector3d(0.0, 2.5, 3.0));
-      formation_triangle.push_back(Eigen::Vector3d(2.5, 0.0, 3.0));
-
       // plan paths to reshape the formation
-      std::vector<std::vector<Eigen::Vector3d>> paths = Formation::getPathsReshapeFormation(formation_state.followers, formation_triangle);
-
+      std::vector<std::vector<Eigen::Vector3d>> paths = {};
+      paths = getPathsReshapeFormation(formation_state.followers, formation_triangle);
+      printf("Found paths\n");
       // tell the formation to reshape the formation
       // this will make the UAVs move, the flag "formation_state.is_static" will become false
       bool success = action_handlers.reshapeFormation(paths);
@@ -321,7 +330,7 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
 
       printf("2: deciding which way to go\n");
 
-      if (avg_target(0)>avg_target(1))
+      if (std::abs(avg_target(0))>std::abs(avg_target(1)))
       {
         xTrueYfalse = true;
       }
@@ -337,22 +346,17 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
     }
     case 3: {
       printf("3: reshaping\n");
-
-      std::vector<Eigen::Vector3d> formation_line_x = {};
-      formation_line_x.push_back(Eigen::Vector3d(-2.4, 0.0, 3.0));
-      formation_line_x.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      formation_line_x.push_back(Eigen::Vector3d(2.4, 0.0, 3.0));
-
-      std::vector<Eigen::Vector3d> formation_line_y= {};
-      formation_line_y.push_back(Eigen::Vector3d(0.0, -2.4, 3.0));
-      formation_line_y.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      formation_line_y.push_back(Eigen::Vector3d(0.0, 2.4, 3.0));
-      
-      std::vector<std::vector<Eigen::Vector3d>> paths = Formation::getPathsReshapeFormation(formation_state.followers, formation_line_y);
+      std::vector<std::vector<Eigen::Vector3d>> paths = {};
       if (xTrueYfalse)
       {
-        std::vector<std::vector<Eigen::Vector3d>> paths = Formation::getPathsReshapeFormation(formation_state.followers, formation_line_x);
+        paths = getPathsReshapeFormation(formation_state.followers, Formation::formation_line_x);
+      }
+      else 
+      {
+        paths = getPathsReshapeFormation(formation_state.followers, Formation::formation_line_y);
       } 
+
+      printf("Found paths\n");
       // tell the formation to reshape the formation
       // this will make the UAVs move, the flag "formation_state.is_static" will become false
       bool success = action_handlers.reshapeFormation(paths);
@@ -384,7 +388,7 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
       y_dif = goal_y - leader_pose_y;
       int x_step = x_dif/10;
       int y_step = y_dif/10;
-      bool success = false;
+      success = false;
       
       if (xTrueYfalse)
       {

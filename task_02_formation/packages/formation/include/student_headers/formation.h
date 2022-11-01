@@ -11,6 +11,10 @@ namespace task_02_formation
 class Formation : public Task02Formation {
 
 public:
+
+  std::vector<Eigen::Vector3d> formation_triangle;
+  std::vector<Eigen::Vector3d> formation_line_x;
+  std::vector<Eigen::Vector3d> formation_line_y;
   /**
    * @brief The formation controller initialization method. This method will be called ONLY ONCE in the lifetime of the controller.
    * Use this method do do any heavy pre-computations.
@@ -82,6 +86,11 @@ private:
   std::deque<Eigen::Vector3d> measurements;
   Eigen::Vector3d avg_target;
   bool xTrueYfalse = true;
+  bool success = false;
+  
+      
+        
+
 
 };
 
