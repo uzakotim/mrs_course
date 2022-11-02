@@ -52,4 +52,4 @@ windows:
       panes:
         - export UAV_NAME="uav1"; export UAV_TYPE="f450"; waitForControl; roslaunch mrs_rviz_plugins load_robot.launch
         - export UAV_NAME="uav2"; export UAV_TYPE="f450"; waitForControl; roslaunch mrs_rviz_plugins load_robot.launch
-        - export UAV_NAME="uav3"; export UAV_TYPE="f450"; waitForControl; roslaunch mrs_rviz_plugins load_robot.launc
+        - export UAV_NAME="uav3"; export UAV_TYPE="f450"; waitForControl; roslaunch mrs_rviz_plugins load_robot.launch

@@ -12,9 +12,6 @@ class Formation : public Task02Formation {
 
 public:
 
-  std::vector<Eigen::Vector3d> formation_triangle;
-  std::vector<Eigen::Vector3d> formation_line_x;
-  std::vector<Eigen::Vector3d> formation_line_y;
   /**
    * @brief The formation controller initialization method. This method will be called ONLY ONCE in the lifetime of the controller.
    * Use this method do do any heavy pre-computations.
@@ -28,7 +25,7 @@ public:
    * @param resolution 
    * @return std::vector<Eigen::Vector3d> 
    */
-  std::vector<Eigen::Vector3d> createMinkowskyPoints(Eigen::Vector3d input,double resolution);
+  std::vector<Eigen::Vector3d> createMinkowskyPoints(astar::Position input,double resolution);
   /**
    * @brief This method calculates paths for each UAV from an initial state towards a desired final state.
    * This method is supposed to be filled in by the student.
@@ -87,11 +84,6 @@ private:
   Eigen::Vector3d avg_target;
   bool xTrueYfalse = true;
   bool success = false;
-  
-      
-        
-
-
 };
 
 }  // namespace task_02_formation

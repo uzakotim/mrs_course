@@ -14,23 +14,9 @@ namespace task_02_formation
  * Use this method to do any heavy pre-computations.
  */
 void Formation::init() {
-      formation_triangle.push_back(Eigen::Vector3d(-4.5, 0.0, 3.0));
-      formation_triangle.push_back(Eigen::Vector3d(0.0, 4.5, 3.0));
-      formation_triangle.push_back(Eigen::Vector3d(4.5, 0.0, 3.0));
-
-
-      formation_line_x.push_back(Eigen::Vector3d(-3.0, 0.0, 3.0));
-      formation_line_x.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      formation_line_x.push_back(Eigen::Vector3d(3.0, 0.0, 3.0));
-
-      formation_line_y.push_back(Eigen::Vector3d(0.0, 3.0, 3.0));
-      formation_line_y.push_back(Eigen::Vector3d(0.0, 0.0, 3.0));
-      formation_line_y.push_back(Eigen::Vector3d(0.0, 3.0, 3.0)); 
-
-
 }
 
-std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(Eigen::Vector3d input,double resolution)
+std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(astar::Position input,double resolution)
 {   
     std::vector< std::vector<int> > EXPANSION_DIRECTIONS = {{-1, -1, -1}, {-1, -1, 0}, {-1, -1, 1}, {-1, 0, -1}, {-1, 0, 0}, {-1, 0, 1}, {-1, 1, -1},
                                                             {-1, 1, 0},   {-1, 1, 1},  {0, -1, -1}, {0, -1, 0},  {0, -1, 1}, {0, 0, -1}, {0, 0, 1},
@@ -44,11 +30,13 @@ std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(Eigen::Vector3d in
                                                                 {1, -1, -1},{1, -1, 1}, 
                                                                 {1, 1, -1},{1, 1, 1}};
     std::vector<Eigen::Vector3d> points;
-    points.push_back(input);
+    Eigen::Vector3d point_input;
+    point_input << input.x(), input.y(), input.z();
+    points.push_back(point_input);
     for (auto vertex: EXPANSION_DIRECTIONS_HARD)
     {
         Eigen::Vector3d point;
-        point << input(0)+resolution*vertex[0],input(1)+resolution*vertex[1], input(2)+resolution*vertex[2];
+        point << input.x()+resolution*vertex[0],input.y()+resolution*vertex[1], input.z()+resolution*vertex[2];
         points.push_back(point);
     }
     return points;
@@ -87,12 +75,10 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
   std::vector<std::vector<Eigen::Vector3d>> paths;
   // set resolution
   const double resolution = 0.7;
-  astar::Astar astar(resolution);
+  astar::Astar astar(resolution,10000);
    // initialize obstacles
   std::set<astar::Cell> obstacles_fixed;
   std::set<astar::Cell> obstacles_total;
-
-  Eigen::Vector3d point_temp;
 
   std::vector<Eigen::Vector3d> inflated_obstacles; 
   std::vector<Eigen::Vector3d> inflated_starts; 
@@ -101,7 +87,6 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
   for (int i = 0; i < n_uavs; i++) {
 
     // prepare the path
-    std::vector<Eigen::Vector3d> path;
     // path made of two waypoints: I -> F
     std::set<astar::Cell> obstacles_temp = {};
 
@@ -111,13 +96,13 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
     int j = i;
     while(j <n_uavs-1)
     {
-      point_temp << initial_states[j+1](0), initial_states[j+1](1), initial_states[j+1](2);
+      astar::Position point_temp = astar::Position(initial_states[j+1](0), initial_states[j+1](1), initial_states[j+1](2));
       inflated_starts = Formation::createMinkowskyPoints(point_temp,resolution);
       for (Eigen::Vector3d obst: inflated_starts)
       {
         obstacles_temp.insert(astar.toGrid(obst(0), obst(1), obst(2)));
       }
-      point_temp << final_states[j+1](0), final_states[j+1](1), final_states[j+1](2);
+      point_temp= astar::Position(final_states[j+1](0), final_states[j+1](1), final_states[j+1](2));
       inflated_goals = Formation::createMinkowskyPoints(point_temp,resolution);
       for (Eigen::Vector3d obst: inflated_goals)
       {
@@ -125,35 +110,39 @@ std::vector<std::vector<Eigen::Vector3d>> Formation::getPathsReshapeFormation(co
       }
       j++;
     }
-    Eigen::Vector3d start,goal;
-    start << initial_states[i](0), initial_states[i](1), initial_states[i](2);
-    goal  << final_states[i](0),final_states[i](1),final_states[i](2);
+    Eigen::Vector3d start_t,goal_t;
+    start_t << initial_states[i](0), initial_states[i](1), initial_states[i](2);
+    goal_t  << final_states[i](0),final_states[i](1),final_states[i](2);
 
     std::set<astar::Cell> obstacles_total{};
     std::merge(obstacles_fixed.begin(), obstacles_fixed.end(),
                 obstacles_temp.begin(), obstacles_temp.end(),
                 std::inserter(obstacles_total, obstacles_total.begin()));
-    path = astar.plan(start, goal, obstacles_total);
 
+    astar::Position start(start_t(0), start_t(1), start_t(2));
+    astar::Position goal(goal_t(0), goal_t(1), goal_t(2));
+    std::optional<std::list<astar::Position>> path = astar.plan(start, goal, obstacles_total);
 
-    if (path.size()>0) {
-      printf("path found\n");
-      paths.push_back(path);
-    } else {
-      printf("path not found\n");
-      return paths;
-    }
-
-    for (Eigen::Vector3d point : path)
-    {
-        inflated_obstacles = Formation::createMinkowskyPoints(point,resolution);
+    if (path) {
+      printf("path found:\n");
+      std::vector<Eigen::Vector3d> found_path ={};
+      for (astar::Position pos : path.value()) {
+        found_path.push_back(Eigen::Vector3d(pos.x(), pos.y(),pos.z()));
+        inflated_obstacles = Formation::createMinkowskyPoints(pos,resolution);
         for (Eigen::Vector3d obst: inflated_obstacles)
         {
           obstacles_fixed.insert(astar.toGrid(obst(0), obst(1), obst(2)));
         }
-    }
-     
+      }
+      paths.push_back(found_path);
+
+    } else {
+      printf("path not found\n");
+    }     
   }
+  obstacles_total.clear();
+  obstacles_fixed.clear();
+  std::set<astar::Cell> obstacles_temp = {};
 
   return paths;
 }
@@ -188,7 +177,7 @@ Eigen::Vector3d Formation::multilateration(const std::vector<Eigen::Vector3d> &p
   // the solution... initialized as (0, 0, 0)^T, is it a good initialization?
   Eigen::Vector3d s = Eigen::Vector3d(0, 0, 0);
 
-  const int max_iterations = 30;
+  const int max_iterations = 500;
 
   for (int n_iterations = 0; n_iterations < max_iterations; n_iterations++) {
 
@@ -203,7 +192,7 @@ Eigen::Vector3d Formation::multilateration(const std::vector<Eigen::Vector3d> &p
     }
 
     // do the Gauss-Newton iteration
-    s = s - (J.transpose() * J + 0.5*I).inverse() * J.transpose() * g;
+    s = s - (J.transpose() * J + 1.0*I).inverse() * J.transpose() * g;
   }
 
   return s;
@@ -274,12 +263,79 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
     // in the fist state, reorganize the formation into a column
     case 0: {
       printf("0: forming triangle\n");
+
       // plan paths to reshape the formation
-      std::vector<std::vector<Eigen::Vector3d>> paths = {};
-      paths = getPathsReshapeFormation(formation_state.followers, formation_triangle);
+      std::vector<std::vector<Eigen::Vector3d>> combinations = {};
+      Eigen::Vector3d one = Eigen::Vector3d(-2.0, 3.46, 3.0);
+      Eigen::Vector3d two = Eigen::Vector3d(4.0, 0.0, 3.0);
+      Eigen::Vector3d three = Eigen::Vector3d(-2.0, -3.46, 3.0);
+
+      std::vector<Eigen::Vector3d> combination_one;
+      combination_one.push_back(one);
+      combination_one.push_back(two);
+      combination_one.push_back(three);
+            
+      std::vector<Eigen::Vector3d> combination_two;
+      combination_two.push_back(one);
+      combination_two.push_back(three);
+      combination_two.push_back(two);
+      
+      std::vector<Eigen::Vector3d> combination_three;
+      combination_three.push_back(three);
+      combination_three.push_back(two);
+      combination_three.push_back(one);
+      
+      std::vector<Eigen::Vector3d> combination_four;
+      combination_four.push_back(three);
+      combination_four.push_back(one);
+      combination_four.push_back(two);
+
+      std::vector<Eigen::Vector3d> combination_five;
+      combination_five.push_back(two);
+      combination_five.push_back(one);
+      combination_five.push_back(three);
+
+      std::vector<Eigen::Vector3d> combination_six;
+      combination_six.push_back(two);
+      combination_six.push_back(three);
+      combination_six.push_back(one);
+
+      // double current_cost = 10000.0;
+
+      combinations.push_back(combination_one);
+      combinations.push_back(combination_two);
+      combinations.push_back(combination_three);
+      combinations.push_back(combination_four);
+      combinations.push_back(combination_five);
+      combinations.push_back(combination_six);
+        
+      std::vector<double> path_sizes = {};
+      for (size_t i = 0;i<combinations.size();i++){
+        paths = Formation::getPathsReshapeFormation(formation_state.followers, combinations[i]);
+        if (paths.size() == 3)
+        {
+          double total = 0;
+          for (size_t j = 0; j < paths.size(); j++)
+          {
+            total +=paths[j].size();
+          }
+          path_sizes.push_back(total);
+        }else 
+        {
+          path_sizes.push_back(10e7);
+        }
+      }
+      size_t iMax=0,iMin=0;
+      for(size_t i=1; i<path_sizes.size(); ++i)
+      {
+        if(path_sizes[iMax] < path_sizes[i])
+                iMax=i;
+        if(path_sizes[iMin] > path_sizes[i])
+                iMin=i;
+      }
+      paths = Formation::getPathsReshapeFormation(formation_state.followers, combinations[iMin]);
       printf("Found paths\n");
-      // tell the formation to reshape the formation
-      // this will make the UAVs move, the flag "formation_state.is_static" will become false
+
       bool success = action_handlers.reshapeFormation(paths);
 
       if (!success) {
@@ -287,6 +343,7 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
         return;
       }
 
+      paths.clear();
       current_stage_++;
       count_data_ = 0;
       measurements = {};
@@ -330,7 +387,7 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
 
       printf("2: deciding which way to go\n");
 
-      if (std::abs(avg_target(0))>std::abs(avg_target(1)))
+      if (std::abs(avg_target(0)-formation_state.virtual_leader(0))>std::abs(avg_target(1)- formation_state.virtual_leader(1)))
       {
         xTrueYfalse = true;
       }
@@ -346,26 +403,95 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
     }
     case 3: {
       printf("3: reshaping\n");
-      std::vector<std::vector<Eigen::Vector3d>> paths = {};
+      
+      paths.clear();
+      std::vector<std::vector<Eigen::Vector3d>> combinations = {};
+      Eigen::Vector3d one = Eigen::Vector3d(0.0, 3.0, 3.0);
+      Eigen::Vector3d two = Eigen::Vector3d(0.0, 0.0, 3.0);
+      Eigen::Vector3d three = Eigen::Vector3d(0.0, -3.0, 3.0);
       if (xTrueYfalse)
       {
-        paths = getPathsReshapeFormation(formation_state.followers, Formation::formation_line_x);
+        one = Eigen::Vector3d(3.0, 0.0, 3.0);
+        two = Eigen::Vector3d(0.0, 0.0, 3.0);
+        three = Eigen::Vector3d(-3.0, 0.0, 3.0);
       }
-      else 
-      {
-        paths = getPathsReshapeFormation(formation_state.followers, Formation::formation_line_y);
-      } 
 
+      std::vector<Eigen::Vector3d> combination_one;
+      combination_one.push_back(one);
+      combination_one.push_back(two);
+      combination_one.push_back(three);
+            
+      std::vector<Eigen::Vector3d> combination_two;
+      combination_two.push_back(one);
+      combination_two.push_back(three);
+      combination_two.push_back(two);
+      
+      std::vector<Eigen::Vector3d> combination_three;
+      combination_three.push_back(three);
+      combination_three.push_back(two);
+      combination_three.push_back(one);
+      
+      std::vector<Eigen::Vector3d> combination_four;
+      combination_four.push_back(three);
+      combination_four.push_back(one);
+      combination_four.push_back(two);
+
+      std::vector<Eigen::Vector3d> combination_five;
+      combination_five.push_back(two);
+      combination_five.push_back(one);
+      combination_five.push_back(three);
+
+      std::vector<Eigen::Vector3d> combination_six;
+      combination_six.push_back(two);
+      combination_six.push_back(three);
+      combination_six.push_back(one);
+
+      // double current_cost = 10000.0;
+
+      combinations.push_back(combination_one);
+      combinations.push_back(combination_two);
+      combinations.push_back(combination_three);
+      combinations.push_back(combination_four);
+      combinations.push_back(combination_five);
+      combinations.push_back(combination_six);
+        
+      std::vector<double> path_sizes = {};
+      for (size_t i = 0;i<combinations.size();i++){
+        paths = Formation::getPathsReshapeFormation(formation_state.followers, combinations[i]);
+        if (paths.size() == 3)
+        {
+          double total = 0;
+          for (size_t j = 0; j < paths.size(); j++)
+          {
+            total +=paths[j].size();
+          }
+          path_sizes.push_back(total);
+        }else 
+        {
+          path_sizes.push_back(10e7);
+        }
+      }
+      size_t iMax=0,iMin=0;
+      for(size_t i=1; i<path_sizes.size(); ++i)
+      {
+        if(path_sizes[iMax] < path_sizes[i])
+                iMax=i;
+        if(path_sizes[iMin] > path_sizes[i])
+                iMin=i;
+      }
+      paths = Formation::getPathsReshapeFormation(formation_state.followers, combinations[iMin]);
       printf("Found paths\n");
+      
       // tell the formation to reshape the formation
       // this will make the UAVs move, the flag "formation_state.is_static" will become false
       bool success = action_handlers.reshapeFormation(paths);
 
       if (!success) {
-        printf("something went wrong while reshaping the formation\n");
+        // printf("something went wrong while reshaping the formation\n");
         return;
       }
 
+      paths.clear();
       current_stage_++;
 
       break;
@@ -374,29 +500,20 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
       printf("4: flying to destination\n");
     // tell the virtual leader to move to the center of the arena
 
-      // i need difference between current goal and current leader pose
-      double x_dif {0.0};
-      double y_dif {0.0};
-
-      double leader_pose_x = formation_state.virtual_leader(0);
-      double leader_pose_y = formation_state.virtual_leader(1);
-
       double goal_x = avg_target(0);
       double goal_y = avg_target(1);
 
-      x_dif = goal_x - leader_pose_x;
-      y_dif = goal_y - leader_pose_y;
-      int x_step = x_dif/10;
-      int y_step = y_dif/10;
+      int x_step = (goal_x-formation_state.virtual_leader(0))/10;
+      int y_step = (goal_y-formation_state.virtual_leader(1))/10;
       success = false;
       
       if (xTrueYfalse)
       {
-        success = action_handlers.setLeaderPosition(Eigen::Vector3d(10.0*x_step, 0, 3)); // relative to current position vector
+        success = action_handlers.setLeaderPosition(Eigen::Vector3d(formation_state.virtual_leader(0) + 10.0*x_step,formation_state.virtual_leader(1)+0.0,formation_state.virtual_leader(2)+ 0.0)); // relative to current position vector
       }
       else 
       {
-        success = action_handlers.setLeaderPosition(Eigen::Vector3d(0, 10.0*y_step, 3)); // relative to current position vector
+        success = action_handlers.setLeaderPosition(Eigen::Vector3d(formation_state.virtual_leader(0) + 0.0,formation_state.virtual_leader(1) + 10.0*y_step,formation_state.virtual_leader(2)+ 0.0)); // relative to current position vector
       }
       if (!success) {
         printf("something went wrong moving the leader\n");
