@@ -586,8 +586,8 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
       double goal_x = avg_target(0);
       double goal_y = avg_target(1);
 
-      int x_step = (goal_x-formation_state.virtual_leader(0))/10;
-      int y_step = (goal_y-formation_state.virtual_leader(1))/10;
+      int x_step = std::round((goal_x-formation_state.virtual_leader(0))/10);
+      int y_step = std::round((goal_y-formation_state.virtual_leader(1))/10);
       success = false;
       
       if (xTrueYfalse)
