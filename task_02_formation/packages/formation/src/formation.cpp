@@ -15,8 +15,8 @@ namespace task_02_formation
  */
 void Formation::init() {
   time_last_call_ = 0.0;
-  double q = 10.0;
-  double r = 1.0;
+  double q = 5.0;
+  double r = 0.1;
   this->Q << q,0,0,0,0,0,
              0,q,0,0,0,0,
              0,0,q,0,0,0,
