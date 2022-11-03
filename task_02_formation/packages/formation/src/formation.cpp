@@ -14,7 +14,80 @@ namespace task_02_formation
  * Use this method to do any heavy pre-computations.
  */
 void Formation::init() {
+  time_last_call_ = 0.0;
+  double q = 10.0;
+  double r = 1.0;
+  this->Q << q,0,0,0,0,0,
+             0,q,0,0,0,0,
+             0,0,q,0,0,0,
+             0,0,0,q,0,0,
+             0,0,0,0,q,0,
+             0,0,0,0,0,q;
+  this->R << r,0,0,
+             0,r,0,
+             0,0,r;
 }
+
+void Formation::resetKF() {
+
+  // IT WOULD BE NICE TO RESET THE KALMAN'S STATE AND COVARIANCE
+  this->new_x << 0,0,0,0,0,0;
+  this->new_cov.setIdentity();
+}
+std::tuple<Vector6d, Matrix6x6d> Formation::lkfPredict(const Vector6d &x, const Matrix6x6d &x_cov, const double &dt) {
+
+  // x[k+1] = A*x[k] + B*u[k]
+  Matrix6x6d A; 
+  A <<1,0,0,dt,0,0,
+      0,1,0,0,dt,0,
+      0,0,1,0,0,dt,
+      
+      0,0,0,1,0,0,
+      0,0,0,0,1,0,
+      0,0,0,0,0,1;
+
+
+  Vector6d   new_x;      // the updated state vector, x[k+1]
+  Matrix6x6d new_x_cov;  // the updated covariance matrix
+
+  // PUT YOUR CODE HERE
+  new_x = A*x;
+  new_x_cov = A*x_cov*A.transpose()+Q;
+  
+  return {new_x, new_x_cov};
+}
+
+/**
+ * @brief LKF filter correction step
+ *
+ * @param x current state vector: x = [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, acc_x, acc_y, acc_z]^T
+ * @param x_cov current state covariance: x_cov in R^{9x9}
+ * @param measurement measurement vector: measurement = [pos_x, pos_y, pos_z, acc_x, acc_y, acc_z]^T
+ * @param dt the time difference in seconds between now and the last iteration
+ *
+ * @return <new_state, new_covariance>
+ */
+std::tuple<Vector6d, Matrix6x6d> Formation::lkfCorrect(const Vector6d &x, const Matrix6x6d &x_cov, const Vector3d &measurement) {
+
+  Vector6d   new_x;      // the updated state vector, x[k+1]
+  Matrix6x6d new_x_cov;  // the updated covariance matrix
+
+  Matrix3x6d H;
+  H << 1,0,0,0,0,0,
+       0,1,0,0,0,0,
+       0,0,1,0,0,0;
+       // Kalman Gain
+  Matrix6x3d K = x_cov*H.transpose()*((H*x_cov*H.transpose()+R).inverse()); 
+  // update
+  new_x = x+K*(measurement-H*x);
+
+  Matrix6x6d Id6x6;
+  Id6x6.setIdentity();
+
+  new_x_cov = (Id6x6 - K*H)*x_cov;
+  return {new_x, new_x_cov};
+}
+
 
 std::vector<Eigen::Vector3d> Formation::createMinkowskyPoints(astar::Position input,double resolution)
 {   
@@ -239,10 +312,13 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
   //    Position (x, y, z)
   //    Color (r, g, b, alpha), alpha = 1.0 is fully visible
   //    Size (meters)
-  action_handlers.visualizeCube(Position_t{target_position(0), target_position(1), target_position(2)}, Color_t{0.0, 0.0, 1.0, 1.0}, 1.0);
+  // action_handlers.visualizeCube(Position_t{target_position(0), target_position(1), target_position(2)}, Color_t{0.0, 0.0, 1.0, 1.0}, 1.0);
 
   // | ------------------- Put your code here ------------------- |
-  
+  // measure dt -----------
+  double dt = time_stamp-time_last_call_;
+  time_last_call_ = time_stamp;
+  // --------------------------------
   // do nothing while the formation is in motion
   if (!formation_state.is_static) {
     return;
@@ -354,9 +430,16 @@ void Formation::update(const FormationState_t &formation_state, const Ranging_t 
     case 1: {
 
       printf("1: capturing data\n");
-      measurements.push_back(target_position);
+      resetKF();
+      std::tie(new_x,new_cov) = lkfPredict(new_x,new_cov,dt);
+      std::tie(new_x,new_cov) = lkfCorrect(new_x,new_cov,target_position);
+
+      Vector3d estimated_state = Vector3d(new_x(0),new_x(1),new_x(2));
+      action_handlers.visualizeCube(Position_t{estimated_state(0), estimated_state(1), estimated_state(2)}, Color_t{0.0, 0.0, 1.0, 1.0}, 1.0);
+      measurements.push_back(estimated_state);
+
       count_data_ ++;
-      if (count_data_>10)
+      if (count_data_>20)
       {
         double total_x{0.0};
         double total_y{0.0};

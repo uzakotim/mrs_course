@@ -7,6 +7,12 @@
 
 namespace task_02_formation
 {
+typedef Eigen::Matrix<double, 6, 6> Matrix6x6d;
+typedef Eigen::Matrix<double, 6, 3> Matrix6x3d;
+typedef Eigen::Matrix<double, 3, 6> Matrix3x6d;
+typedef Eigen::Matrix<double, 3, 3> Matrix3x3d;
+typedef Eigen::Matrix<double, 6, 1> Vector6d;
+typedef Eigen::Matrix<double, 3, 1> Vector3d;
 
 class Formation : public Task02Formation {
 
@@ -17,7 +23,9 @@ public:
    * Use this method do do any heavy pre-computations.
    */
   void init();
-
+  std::tuple<Vector6d, Matrix6x6d> lkfPredict(const Vector6d &x, const Matrix6x6d &x_cov, const double &dt);
+  std::tuple<Vector6d, Matrix6x6d> lkfCorrect(const Vector6d &x, const Matrix6x6d &x_cov, const Vector3d &measurement);
+  void resetKF();
   /**
    * @brief Function to create points around the main point
    * 
@@ -84,6 +92,13 @@ private:
   Eigen::Vector3d avg_target;
   bool xTrueYfalse = true;
   bool success = false;
+  double time_last_call_;
+  Vector3d init_input;
+  Matrix6x6d Q;
+  Matrix3x3d R;
+
+  Vector6d new_x;
+  Matrix6x6d new_cov;
 };
 
 }  // namespace task_02_formation
