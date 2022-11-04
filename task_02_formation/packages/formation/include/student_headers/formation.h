@@ -54,8 +54,11 @@ public:
    *   I -> D
    *   F -> I
    */
+  std::vector<std::vector<Eigen::Vector3d>> getPathsReshapeFormationEasy(const std::vector<Eigen::Vector3d> &initial_states,
+                                                                     const std::vector<Eigen::Vector3d> &final_states);
   std::vector<std::vector<Eigen::Vector3d>> getPathsReshapeFormation(const std::vector<Eigen::Vector3d> &initial_states,
                                                                      const std::vector<Eigen::Vector3d> &final_states);
+  std::vector<std::vector<Eigen::Vector3d>> assignPaths(const FormationState_t &formation_state,const Eigen::Vector3d &one, const Eigen::Vector3d &two, const Eigen::Vector3d &three);
 
   /**
    * @brief The method for calculating a 3D position of source of signal based on the positions of UAVs and the measured distances to the source.
