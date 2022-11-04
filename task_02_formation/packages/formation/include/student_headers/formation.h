@@ -23,7 +23,7 @@ public:
    * Use this method do do any heavy pre-computations.
    */
   void init();
-  std::tuple<Vector6d, Matrix6x6d> lkfPredict(const Vector6d &x, const Matrix6x6d &x_cov, const double &dt);
+  std::tuple<Vector6d, Matrix6x6d> lkfPredict(const Vector6d &x, const Matrix6x6d &x_cov,const double &dt);
   std::tuple<Vector6d, Matrix6x6d> lkfCorrect(const Vector6d &x, const Matrix6x6d &x_cov, const Vector3d &measurement);
   void resetKF();
   /**
@@ -93,6 +93,7 @@ private:
   int count_data_ = 0;
   std::deque<Eigen::Vector3d> measurements;
   Eigen::Vector3d avg_target;
+  Eigen::Vector3d estimated_state;
   bool xTrueYfalse = true;
   bool success = false;
   double time_last_call_;
