@@ -1,8 +1,6 @@
 #ifndef FORMATION_H
 #define FORMATION_H
-
 #include <task_02_formation/task_02_formation.h>
-
 #include <student_headers/astar.h>
 
 namespace task_02_formation
@@ -34,6 +32,7 @@ public:
    * @return std::vector<Eigen::Vector3d> 
    */
   std::vector<Eigen::Vector3d> createMinkowskyPoints(astar::Position input,double resolution);
+  std::vector<Eigen::Vector3d> createMinkowskyPointsHard(astar::Position input,double resolution);
   /**
    * @brief This method calculates paths for each UAV from an initial state towards a desired final state.
    * This method is supposed to be filled in by the student.
@@ -54,7 +53,7 @@ public:
    *   I -> D
    *   F -> I
    */
-  std::vector<std::vector<Eigen::Vector3d>> getPathsReshapeFormationEasy(const std::vector<Eigen::Vector3d> &initial_states,
+  std::vector<std::vector<Eigen::Vector3d>> getPathsReshapeFormationHard(const std::vector<Eigen::Vector3d> &initial_states,
                                                                      const std::vector<Eigen::Vector3d> &final_states);
   std::vector<std::vector<Eigen::Vector3d>> getPathsReshapeFormation(const std::vector<Eigen::Vector3d> &initial_states,
                                                                      const std::vector<Eigen::Vector3d> &final_states);
