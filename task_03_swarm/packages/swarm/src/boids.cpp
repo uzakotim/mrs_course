@@ -54,12 +54,26 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   // 2) Access my own prob. distribution of colors
   Distribution my_distribution = state.distribution;
   int          dim             = my_distribution.dim();
-
+  // consensus
+  double color1,color2,color3,color4;
+  color1 = my_distribution.get(0);
+  color2 = my_distribution.get(1);
+  color3 = my_distribution.get(2);
+  color4 = my_distribution.get(3);
+  int counter_colors = 0;
   // Am I nearby a beacon?
   Distribution beacon_distribution;
+
   if (state.nearby_beacon) {
     beacon_distribution = state.beacon_distribution;
+    color1 += beacon_distribution.get(0);
+    color2 += beacon_distribution.get(1);
+    color3 += beacon_distribution.get(2);
+    color4 += beacon_distribution.get(3);
+    counter_colors++;
   }
+
+
   if (state.neighbors_states.size()>0)
   {
       // 3) Iterate over the states of the visible neighbors
@@ -75,7 +89,13 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
 
         alignment += n_vel_global;
         cohesion  += n_pos_rel;
-        separation+=-n_pos_rel;
+        separation-= n_pos_rel;
+
+        color1    += n_distribution.get(0);
+        color2    += n_distribution.get(1);
+        color3    += n_distribution.get(2);
+        color4    += n_distribution.get(3);
+        counter_colors++;
       }
 
       // 4) Scale the action by user parameter
@@ -85,20 +105,32 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
       // printVector3d(cohesion, "Cohesion: ");
       separation /=state.neighbors_states.size();
       // printVector3d(separation, "Separation: ");
-      // Eigen::Vector3d total = alignment + cohesion + separation;
-      printVector3d(target, "Target: ");
-      action = user_params.param1 * alignment + user_params.param2*cohesion + user_params.param3*separation + user_params.param4 * target;
   }
   else
   {
-      action = user_params.param4 * target;
+      color1 += my_distribution.get(0);
+      color2 += my_distribution.get(0);
+      color3 += my_distribution.get(0);
+      color4 += my_distribution.get(0);
+      counter_colors++;
   }
+
+  action = user_params.param1 * alignment + user_params.param2*cohesion + user_params.param3*separation + user_params.param4*target;
+
+  color1/=counter_colors;
+  color2/=counter_colors;
+  color3/=counter_colors;
+  color4/=counter_colors;
+
+  my_distribution.set(0,color1);
+  my_distribution.set(1,color2);
+  my_distribution.set(2,color3);
+  my_distribution.set(3,color4);
   // 5) Print the output action
-  // printVector3d(action, "Action: ");
+  printVector3d(action, "Action: ");
 
   // 6) Visualize the arrow in RViz
   action_handlers.visualizeArrow("action", action, Color_t{0.0, 0.0, 0.0, 1.0});
-  
   // | ------------------- EXAMPLE CODE START ------------------- |
 
   // Eigen::Vector3d action = Eigen::Vector3d::Zero();
