@@ -1,10 +1,15 @@
 # alignment
+# 1.0
 param1: 1.0
 # cohesion
-param2: 1.0
+# 0.06
+param2: 0.1
 # separation
-param3: 5.0
-param4: 0.25
+#0.3
+param3: 0.34
+# target
+# 0.25
+param4: 0.3
 param5: 0.0
 param6: 0.0
 param7: 0.0
