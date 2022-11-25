@@ -107,10 +107,10 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   }
   else
   {
-      color1 += my_distribution.get(0);
-      color2 += my_distribution.get(0);
-      color3 += my_distribution.get(0);
-      color4 += my_distribution.get(0);
+      color1 += 0.25;
+      color2 += 0.25;
+      color3 += 0.25;
+      color4 += 0.25;
       counter_colors++;
   }
   action = user_params.param1 * alignment + user_params.param2*cohesion + user_params.param3*separation + user_params.param4* alignment.norm()*target;
