@@ -3,13 +3,13 @@
 param1: 1.0
 # cohesion
 # 0.06
-param2: 0.1
+param2: 0.3
 # separation
 #0.3
-param3: 0.34
+param3: 0.6
 # target
 # 0.25
-param4: 0.3
+param4: 0.2
 param5: 0.0
 param6: 0.0
 param7: 0.0
