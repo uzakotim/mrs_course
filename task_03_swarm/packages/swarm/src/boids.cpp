@@ -42,16 +42,16 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
 
   // TODO STUDENTS: Finish this method. The example code below can be removed, it's there just for an inspiration.
 
-  // | ------------------- EXAMPLE CODE START ------------------- |
-
-  // Setup the output action
+  // | --------------- MY CODE START ------------------- |
+  // 1) Setup the output action
   Eigen::Vector3d action = Eigen::Vector3d::Zero();
   Eigen::Vector3d target = state.target;
 
-  // Call custom functions, e.g., useful for dynamic weighting
-  [[maybe_unused]] double x = multiply(5.0, 10.0);
-
-  // Access my own prob. distribution of colors
+  Eigen::Vector3d alignment  = state.velocity;
+  Eigen::Vector3d cohesion   = Eigen::Vector3d::Zero();
+  Eigen::Vector3d separation = Eigen::Vector3d::Zero();
+  
+  // 2) Access my own prob. distribution of colors
   Distribution my_distribution = state.distribution;
   int          dim             = my_distribution.dim();
 
@@ -60,29 +60,86 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   if (state.nearby_beacon) {
     beacon_distribution = state.beacon_distribution;
   }
+  if (state.neighbors_states.size()>0)
+  {
+      // 3) Iterate over the states of the visible neighbors
+      for (const auto &n_state : state.neighbors_states) {
 
-  // Iterate over the states of the visible neighbors
-  for (const auto &n_state : state.neighbors_states) {
+        auto &[n_pos_rel, n_vel_global, n_distribution] = n_state;
+        // distance to the neighbour
+        [[maybe_unused]] double n_dist = n_pos_rel.norm();
+        // check if the size of my prob. distribution matches the size of the neighbour's distribution
+        if (dim != n_distribution.dim()) {
+          std::cout << "This should never happen. If it did, you set the previous distribution wrongly." << std::endl;
+        }
 
-    auto &[n_pos_rel, n_vel_global, n_distribution] = n_state;
+        alignment += n_vel_global;
+        cohesion  += n_pos_rel;
+        separation+=-n_pos_rel;
+      }
 
-    // distance to the neighbour
-    [[maybe_unused]] double n_dist = n_pos_rel.norm();
-
-    // check if the size of my prob. distribution matches the size of the neighbour's distribution
-    if (dim != n_distribution.dim()) {
-      std::cout << "This should never happen. If it did, you set the previous distribution wrongly." << std::endl;
-    }
+      // 4) Scale the action by user parameter
+      alignment  /=(state.neighbors_states.size()+1);
+      // printVector3d(alignment, "Alignment: ");
+      cohesion   /=state.neighbors_states.size();
+      // printVector3d(cohesion, "Cohesion: ");
+      separation /=state.neighbors_states.size();
+      // printVector3d(separation, "Separation: ");
+      // Eigen::Vector3d total = alignment + cohesion + separation;
+      printVector3d(target, "Target: ");
+      action = user_params.param1 * alignment + user_params.param2*cohesion + user_params.param3*separation + user_params.param4 * target;
   }
+  else
+  {
+      action = user_params.param4 * target;
+  }
+  // 5) Print the output action
+  // printVector3d(action, "Action: ");
 
-  // Example: scale the action by user parameter
-  action = user_params.param1 * target;
-
-  // Print the output action
-  printVector3d(action, "Action: ");
-
-  // Visualize the arrow in RViz
+  // 6) Visualize the arrow in RViz
   action_handlers.visualizeArrow("action", action, Color_t{0.0, 0.0, 0.0, 1.0});
+  
+  // | ------------------- EXAMPLE CODE START ------------------- |
+
+  // Eigen::Vector3d action = Eigen::Vector3d::Zero();
+  // Eigen::Vector3d target = state.target;
+
+
+  // // Call custom functions, e.g., useful for dynamic weighting
+  // [[maybe_unused]] double x = multiply(5.0, 10.0);
+
+  // // Access my own prob. distribution of colors
+  // Distribution my_distribution = state.distribution;
+  // int          dim             = my_distribution.dim();
+
+  // // Am I nearby a beacon?
+  // Distribution beacon_distribution;
+  // if (state.nearby_beacon) {
+  //   beacon_distribution = state.beacon_distribution;
+  // }
+
+  // // Iterate over the states of the visible neighbors
+  // for (const auto &n_state : state.neighbors_states) {
+
+  //   auto &[n_pos_rel, n_vel_global, n_distribution] = n_state;
+
+  //   // distance to the neighbour
+  //   [[maybe_unused]] double n_dist = n_pos_rel.norm();
+
+  //   // check if the size of my prob. distribution matches the size of the neighbour's distribution
+  //   if (dim != n_distribution.dim()) {
+  //     std::cout << "This should never happen. If it did, you set the previous distribution wrongly." << std::endl;
+  //   }
+  // }
+
+  // // Example: scale the action by user parameter
+  // action = user_params.param1 * target;
+
+  // // Print the output action
+  // printVector3d(action, "Action: ");
+
+  // // Visualize the arrow in RViz
+  // action_handlers.visualizeArrow("action", action, Color_t{0.0, 0.0, 0.0, 1.0});
 
   // | -------------------- EXAMPLE CODE END -------------------- |
 

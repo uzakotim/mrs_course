@@ -1,0 +1,50 @@
+- BOIDS
+Goal 1 implement Boids model
+Goal 2 create a weighting function: separation force heigher if other agent is closer
+
+
+
+- Implement updateAgentState 
+
+    *   Calculate a next-iteration action of one agent given relative information of its neighbors and the direction towards a target.
+    *   This method is supposed to be filled in by the student.
+
+    input: state, user_params,action_handlers
+    output: <Vector3d, Distribution>
+
+    *   1) XYZ vector in frame of the agent to be set as velocity command. Beware that i) the vector z-axis component will be set to 0, ii) the vector magnitude
+    * will be clamped into <v_min, v_max> limits and iii) azimuth of the vector's XY-projection will be saturated such that the azimuth between the agent's current
+    * velocity and the vector does not exceed a maximal change.
+    *
+    *       Example 1: Maximal change is d=45deg, v_min=0.1, v_max=0.2, and current velocity is (0.2, 0, 0) -> vector (0, 1, 1) will be clamped and saturated to
+    * 0.2*(cos(d), sin(d), 0).
+    *
+    *       Example 2: Maximal change is d=45deg, v_min=0.1, v_max=0.2, and current velocity is (0.2, 0, 0) -> vector (0, -0.05, 1) will
+    * be clamped and saturated to 0.1*(cos(-d), sin(-d), 0).
+    *
+    *    2) Probability distribution of colors to be set to the agent for next iteration. Beware that output distribution.dim() has to equal input
+    * state.distribution.dim().
+
+
+
+
+
+- SWARM
+- Implement UpdateAction
+    * This method calculates a next-iteration action of one UAV given relative information of its neighbors and obstacles; and the direction towards the
+    *    moving target. This method is supposed to be filled in by the student.
+
+    input:perception, user_params, action_handlers
+    output: Vector3d
+- Implement Weighting Function
+    input: distance, visibility, safety_distance,desired_distance
+    output: <bool,double>
+
+- Implement TargetToDirection
+    input: target_vector
+    output: Direction_t
+    
+- three functions to be implemented in two .cpp files
+
+
+
