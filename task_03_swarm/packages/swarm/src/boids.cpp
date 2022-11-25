@@ -86,7 +86,6 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
         if (dim != n_distribution.dim()) {
           std::cout << "This should never happen. If it did, you set the previous distribution wrongly." << std::endl;
         }
-
         alignment += n_vel_global;
         cohesion  += n_pos_rel;
         separation-= n_pos_rel;
@@ -114,8 +113,9 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
       color4 += my_distribution.get(0);
       counter_colors++;
   }
-
-  action = user_params.param1 * alignment + user_params.param2*cohesion + user_params.param3*separation + user_params.param4*target;
+  // f = 30 HZ -> dt = 1/30 == 0.03
+  double dt = 0.03;
+  action = user_params.param1 * alignment + dt*(user_params.param2*cohesion + user_params.param3*separation) + user_params.param4* alignment.norm()*target;
 
   color1/=counter_colors;
   color2/=counter_colors;
@@ -127,7 +127,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   my_distribution.set(2,color3);
   my_distribution.set(3,color4);
   // 5) Print the output action
-  printVector3d(action, "Action: ");
+  // printVector3d(action, "Action: ");
 
   // 6) Visualize the arrow in RViz
   action_handlers.visualizeArrow("action", action, Color_t{0.0, 0.0, 0.0, 1.0});
