@@ -1,7 +1,7 @@
 # alignment
 param1: 1.0
 # cohesion
-param2: 0.3
+param2: 0.4
 # separation
 param3: 0.55
 # target
@@ -23,6 +23,7 @@ param9: 0.0
 # # alignment
 # param1: 1.0
 # # cohesion
+# 0.4
 # param2: 0.3
 # # separation
 # param3: 0.55
