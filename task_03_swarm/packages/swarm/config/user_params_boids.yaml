@@ -1,11 +1,11 @@
 # alignment
 param1: 0.9
 # cohesion
-param2: 0.4
+param2: 0.375
 # separation
 param3: 0.55
 # target
-param4: 0.3
+param4: 0.225
 
 # w_beacon
 param5: 0.0
