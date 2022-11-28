@@ -6,8 +6,25 @@ param2: 0.3
 param3: 0.55
 # target
 param4: 0.3
+
+# w_beacon
 param5: 0.0
+# w_neigh
 param6: 0.0
+# w_own
 param7: 0.0
+#q - neighbours
 param8: 0.0
+#r - beacon
 param9: 0.0
+
+
+#last best
+# # alignment
+# param1: 1.0
+# # cohesion
+# param2: 0.3
+# # separation
+# param3: 0.55
+# # target
+# param4: 0.3

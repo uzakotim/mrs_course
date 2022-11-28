@@ -3,6 +3,12 @@
 namespace task_03_boids
 {
 
+typedef Eigen::Matrix<double, 8,8> Matrix8x8d;
+typedef Eigen::Matrix<double, 4,8> Matrix4x8d;
+typedef Eigen::Matrix<double, 8,4> Matrix8x4d;
+typedef Eigen::Matrix<double, 4,4> Matrix4x4d;
+typedef Eigen::Matrix<double, 8, 1> Vector8d;
+typedef Eigen::Matrix<double, 4, 1> Vector4d;
 // | ---------- HERE YOU MAY WRITE YOUR OWN FUNCTIONS --------- |
 
 // Example function, can be deleted
@@ -10,6 +16,65 @@ double multiply(const double a, const double b) {
   return a * b;
 }
 
+std::tuple<Vector4d, Matrix4x4d> lkfPredict(const Vector4d &x, const Matrix4x4d &x_cov,const double &q){
+
+  // x[k+1] = A*x[k] + B*u[k]
+  Matrix4x4d A; 
+  A <<1,0,0,0,
+      0,1,0,0,
+      0,0,1,0,
+      0,0,0,1;
+  Vector4d   new_x;      // the updated state vector, x[k+1]
+  Matrix4x4d new_x_cov;  // the updated covariance matrix
+  
+  Matrix4x4d Q; 
+  Q <<q,0,0,0,
+      0,q,0,0,
+      0,0,q,0,
+      0,0,0,q;
+  new_x     = A*x;
+  new_x_cov = A*x_cov*A.transpose()+Q;
+  
+  return {new_x, new_x_cov};
+}
+
+/**
+ * @brief LKF filter correction step
+ *
+ * @param x current state vector: x = [pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, acc_x, acc_y, acc_z]^T
+ * @param x_cov current state covariance: x_cov in R^{9x9}
+ * @param measurement measurement vector: measurement = [pos_x, pos_y, pos_z, acc_x, acc_y, acc_z]^T
+ * @param dt the time difference in seconds between now and the last iteration
+ *
+ * @return <new_state, new_covariance>
+ */
+std::tuple<Vector4d, Matrix4x4d> lkfCorrect(const Vector4d &x, const Matrix4x4d &x_cov, const Vector4d &measurement,const double &r) {
+
+  Vector4d   new_x;      // the updated state vector, x[k+1]
+  Matrix4x4d new_x_cov;  // the updated covariance matrix
+
+  Matrix4x4d H;
+  H << 1,0,0,0,
+       0,1,0,0,
+       0,0,1,0,
+       0,0,0,1;
+
+  Matrix4x4d R; 
+  R <<r,0,0,0,
+      0,r,0,0,
+      0,0,r,0,
+      0,0,0,r;
+  // Kalman Gain
+  Matrix4x4d K = x_cov*H.transpose()*((H*x_cov*H.transpose()+R).inverse()); 
+  // update
+  new_x = x+K*(measurement-H*x);
+
+  Matrix4x4d Id4x4;
+  Id4x4.setIdentity();
+
+  new_x_cov = (Id4x4 - K*H)*x_cov;
+  return {new_x, new_x_cov};
+}
 // | ------------- FILL COMPULSORY FUNCTIONS BELOW ------------ |
 
 /* updateAgentState() //{ */
@@ -50,30 +115,18 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   Eigen::Vector3d alignment  = state.velocity;
   Eigen::Vector3d cohesion   = Eigen::Vector3d::Zero();
   Eigen::Vector3d separation = Eigen::Vector3d::Zero();
+
+  Eigen::Vector4d beacon_color      = Eigen::Vector4d::Zero();  
+  Eigen::Vector4d neighbours_color  = Eigen::Vector4d::Zero();  
+  Eigen::Vector4d own_color         = Eigen::Vector4d::Zero();  
+  Eigen::Vector4d result_color         = Eigen::Vector4d::Zero();  
   
   // 2) Access my own prob. distribution of colors
   Distribution my_distribution = state.distribution;
   int          dim             = my_distribution.dim();
-  // consensus
-  double color1,color2,color3,color4;
-  color1 = my_distribution.get(0);
-  color2 = my_distribution.get(1);
-  color3 = my_distribution.get(2);
-  color4 = my_distribution.get(3);
-  int counter_colors = 0;
-  // Am I nearby a beacon?
-  Distribution beacon_distribution;
-
-  if (state.nearby_beacon) {
-    beacon_distribution = state.beacon_distribution;
-    color1 += beacon_distribution.get(0);
-    color2 += beacon_distribution.get(1);
-    color3 += beacon_distribution.get(2);
-    color4 += beacon_distribution.get(3);
-    counter_colors++;
-  }
-
-
+  
+  own_color << my_distribution.get(0),my_distribution.get(1),my_distribution.get(2),my_distribution.get(3);
+  neighbours_color = own_color;
   if (state.neighbors_states.size()>0)
   {
       // 3) Iterate over the states of the visible neighbors
@@ -90,11 +143,10 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
         cohesion  += n_pos_rel;
         separation-= n_pos_rel;
 
-        color1    += n_distribution.get(0);
-        color2    += n_distribution.get(1);
-        color3    += n_distribution.get(2);
-        color4    += n_distribution.get(3);
-        counter_colors++;
+        neighbours_color(0)+=n_distribution.get(0);
+        neighbours_color(1)+=n_distribution.get(1);
+        neighbours_color(2)+=n_distribution.get(2);
+        neighbours_color(3)+=n_distribution.get(3);
       }
 
       // 4) Scale the action by user parameter
@@ -104,26 +156,48 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
       // printVector3d(cohesion, "Cohesion: ");
       separation /=state.neighbors_states.size();
       // printVector3d(separation, "Separation: ");
+      neighbours_color(0)/=(state.neighbors_states.size()+1.0);
+      neighbours_color(1)/=(state.neighbors_states.size()+1.0);
+      neighbours_color(2)/=(state.neighbors_states.size()+1.0);
+      neighbours_color(3)/=(state.neighbors_states.size()+1.0);
   }
-  else
-  {
-      color1 += 0.25;
-      color2 += 0.25;
-      color3 += 0.25;
-      color4 += 0.25;
-      counter_colors++;
-  }
+
   action = user_params.param1 * alignment + user_params.param2*cohesion + user_params.param3*separation + user_params.param4* alignment.norm()*target;
+  
+  // double q= 1.0;
+  // Matrix4x4d x_cov;  
+  // x_cov << 1,0,0,0,
+  //          0,1,0,0,
+  //          0,0,1,0,
+  //          0,0,0,1;
+  
+  // Am I nearby a beacon?
+  Distribution beacon_distribution;  
 
-  color1/=(double)counter_colors;
-  color2/=(double)counter_colors;
-  color3/=(double)counter_colors;
-  color4/=(double)counter_colors;
-
-  my_distribution.set(0,color1);
-  my_distribution.set(1,color2);
-  my_distribution.set(2,color3);
-  my_distribution.set(3,color4);
+  if (state.nearby_beacon) {
+    beacon_distribution = state.beacon_distribution;
+    beacon_color << beacon_distribution.get(0),beacon_distribution.get(1),beacon_distribution.get(2),beacon_distribution.get(3);
+    result_color = 0.6*beacon_color + 0.4*neighbours_color;
+  }
+  else 
+  {
+    result_color = 0.4*beacon_color + 0.6*neighbours_color;
+  }
+  // std::tie(beacon_color,x_cov) = lkfPredict(neighbours_color,x_cov,user_params.param8);
+  // std::tie(result_color,x_cov) = lkfCorrect(neighbours_color,x_cov,beacon_color,user_params.param9);
+  
+  // result_color = user_params.param5*beacon_color + user_params.param6*neighbours_color;
+  // double total = result_color.sum();
+  // result_color(0)/=total;
+  // result_color(1)/=total;
+  // result_color(2)/=total;
+  // result_color(3)/=total;
+  
+  my_distribution.set(0,result_color(0));
+  my_distribution.set(1,result_color(1));
+  my_distribution.set(2,result_color(2));
+  my_distribution.set(3,result_color(3));
+  
   // 5) Print the output action
   // printVector3d(action, "Action: ");
 
