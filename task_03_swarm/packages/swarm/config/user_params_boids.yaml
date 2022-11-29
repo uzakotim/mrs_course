@@ -1,9 +1,9 @@
-# alignment - velocity
+# alignment - velocity - the bigger the farther they go
 param1: 0.675
 # cohesion - #hitting each other - bigger -> more closer
-param2: 0.750
+param2: 0.985 #0.95
 # separation - wall hitting - bigger -> less hitting
-param3: 0.84
+param3: 1.05
 # target - closer to beacon or farther
 param4: 0.1
 

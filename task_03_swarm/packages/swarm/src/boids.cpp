@@ -52,7 +52,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   Eigen::Vector3d action = Eigen::Vector3d::Zero();
   Eigen::Vector3d target = state.target;
 
-  Eigen::Vector3d alignment  = state.velocity;
+  Eigen::Vector3d alignment  = 0.75*state.velocity;
   Eigen::Vector3d cohesion   = Eigen::Vector3d::Zero();
   Eigen::Vector3d separation = Eigen::Vector3d::Zero();
 
@@ -111,7 +111,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   if (state.nearby_beacon) {
     beacon_distribution = state.beacon_distribution;
     beacon_color << beacon_distribution.get(0),beacon_distribution.get(1),beacon_distribution.get(2),beacon_distribution.get(3);
-    result_color = 0.8*beacon_color + 0.2*neighbours_color;
+    result_color = 0.4*beacon_color + 0.2*own_color + 0.3*neighbours_color;
   }
   else 
   {
