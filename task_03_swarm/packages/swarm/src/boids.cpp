@@ -111,11 +111,11 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   if (state.nearby_beacon) {
     beacon_distribution = state.beacon_distribution;
     beacon_color << beacon_distribution.get(0),beacon_distribution.get(1),beacon_distribution.get(2),beacon_distribution.get(3);
-    result_color = 0.4*beacon_color + 0.6*neighbours_color;
+    result_color = 0.8*beacon_color + 0.2*neighbours_color;
   }
   else 
   {
-    result_color = 0.4*own_color + 0.6*neighbours_color;
+    result_color = 0.25*own_color + 0.75*neighbours_color;
   }
   
   double total = result_color.sum();
