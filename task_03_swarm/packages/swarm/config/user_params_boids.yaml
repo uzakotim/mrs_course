@@ -2,10 +2,10 @@
 param1: 1.0
 # target
 param2: 0.2
-# separation
-param3: 0.1
 # cohesion
-param4: 0.1
+param3: 1.0
+# separation
+param4: 1.0
 
 # w_beacon
 param5: 0.0

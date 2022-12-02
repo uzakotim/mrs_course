@@ -51,69 +51,70 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
 
   Eigen::Vector3d alignment  = Eigen::Vector3d::Zero();
   Eigen::Vector3d separation = Eigen::Vector3d::Zero();
+  Eigen::Vector3d cohesion   = Eigen::Vector3d::Zero();
   Eigen::Vector4d neighbours_color = Eigen::Vector4d::Zero();
   Distribution my_distribution = state.distribution;
+  
   neighbours_color << my_distribution.get(0),my_distribution.get(1),my_distribution.get(2),my_distribution.get(3);
+
+
   int          dim             = my_distribution.dim();
   const int n_neighbours = state.neighbors_states.size();
-  double coef = 0;
-
 
   for (const auto &n_state : state.neighbors_states) {
 
     
     auto &[n_pos_rel, n_vel_global, n_distribution] = n_state;
+    double coef = 0;
+    [[maybe_unused]] double n_dist = n_pos_rel.norm();
 
-    if(n_pos_rel.norm()<1)
+    if(n_dist<1.0)
     {
-      coef = 100;
+      coef = 2000;
     }
     else
     {
-      coef = 0.3/(n_pos_rel.norm()-1);
+      coef = 1.0/(n_dist-1.0);
     }
-    [[maybe_unused]] double n_dist = n_pos_rel.norm();
+
+    
     // check if the size of my prob. distribution matches the size of the neighbour's distribution
     if (dim != n_distribution.dim()) {
       std::cout << "This should never happen. If it did, you set the previous distribution wrongly." << std::endl;
     }
     alignment  += n_vel_global;
     separation += coef*n_pos_rel;
+    cohesion   += n_pos_rel;
 
-    neighbours_color(0)+=n_distribution.get(0);
-    neighbours_color(1)+=n_distribution.get(1);
-    neighbours_color(2)+=n_distribution.get(2);
-    neighbours_color(3)+=n_distribution.get(3);
+    for (int i =0;i<4;i++)
+    {
+      neighbours_color(i)+=n_distribution.get(i);
+    }
 
   }
   if (n_neighbours>0)
   {
       alignment  *= (1.0/n_neighbours);
       separation *= (-1.0/n_neighbours); // use weighting function for separation
-
-      neighbours_color(0)*=(1.0/n_neighbours);
-      neighbours_color(1)*=(1.0/n_neighbours);
-      neighbours_color(2)*=(1.0/n_neighbours);
-      neighbours_color(3)*=(1.0/n_neighbours);
+      cohesion   *= (1.0/n_neighbours);
+      
+      for (int i =0;i<4;i++)
+      {
+        neighbours_color(i)*=(1.0/(n_neighbours+1));
+      }
   }
-  else
-  {
-
-  }
-
-
-  action = user_params.param1*alignment + user_params.param2*target + user_params.param3*separation;  
+  action = user_params.param1*alignment + user_params.param2*target + user_params.param4*separation + user_params.param3*cohesion;  
   Distribution beacon_distribution;  
 
   if (state.nearby_beacon) {
     my_distribution = state.beacon_distribution;
   }
-  else 
+  else
   {
-    my_distribution.set(0,neighbours_color(0));
-    my_distribution.set(1,neighbours_color(1));
-    my_distribution.set(2,neighbours_color(2));
-    my_distribution.set(3,neighbours_color(3));
+    for(int i=0;i<4;i++)
+    {
+      my_distribution.set(i,neighbours_color(i));
+    }
   }
   action_handlers.visualizeArrow("action", action, Color_t{0.0, 0.0, 0.0, 1.0});
   return {action, my_distribution};
