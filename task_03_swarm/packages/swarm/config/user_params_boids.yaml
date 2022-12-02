@@ -1,41 +1,12 @@
 # alignment 
-param1: 1.0
+param1: 5.0
 # target
 param2: 0.2
 # cohesion
-param3: 1.0
-# separation
-param4: 1.0
-
-# w_beacon
+param3: 0.8
+param4: 0.0
 param5: 0.0
-# w_neigh
 param6: 0.0
-# w_own
 param7: 0.0
-#q - neighbours
 param8: 0.0
-#r - beacon
 param9: 0.0
-
-
-#last best
-# # alignment - velocity - the bigger the farther they go
-# param1: 0.675
-# # cohesion - #hitting each other - bigger -> more closer
-# param2: 0.985 #0.95
-# # separation - wall hitting - bigger -> less hitting
-# param3: 1.05
-# # target - closer to beacon or farther
-# param4: 0.1
-
-# # w_beacon
-# param5: 0.0
-# # w_neigh
-# param6: 0.0
-# # w_own
-# param7: 0.0
-# #q - neighbours
-# param8: 0.0
-# #r - beacon
-# param9: 0.0

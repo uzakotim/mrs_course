@@ -60,6 +60,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
 
   int          dim             = my_distribution.dim();
   const int n_neighbours = state.neighbors_states.size();
+  double coef_alignment = 0;
 
   for (const auto &n_state : state.neighbors_states) {
 
@@ -68,13 +69,20 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
     double coef = 0;
     [[maybe_unused]] double n_dist = n_pos_rel.norm();
 
-    if(n_dist<1.0)
+    if(n_dist<=1.0)
     {
-      coef = 2000;
+      coef = 10;
     }
     else
     {
-      coef = 1.0/(n_dist-1.0);
+      if (n_dist>10)
+      {
+        coef = 0.0;
+      }
+      else
+      {
+        coef = 0.5/(n_dist-1.0);
+      }
     }
 
     
@@ -102,12 +110,14 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
       {
         neighbours_color(i)*=(1.0/(n_neighbours+1));
       }
-  }
-  action = user_params.param1*alignment + user_params.param2*target + user_params.param4*separation + user_params.param3*cohesion;  
+  }  
   Distribution beacon_distribution;  
-
   if (state.nearby_beacon) {
     my_distribution = state.beacon_distribution;
+    for (int i =0;i<4;i++)
+    {
+        my_distribution.set(i,0.5*state.beacon_distribution.get(i)+0.5*neighbours_color(i));
+    }
   }
   else
   {
@@ -116,7 +126,8 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
       my_distribution.set(i,neighbours_color(i));
     }
   }
-  action_handlers.visualizeArrow("action", action, Color_t{0.0, 0.0, 0.0, 1.0});
+
+  action = user_params.param1*alignment + user_params.param2*target + separation + user_params.param3*cohesion;  
   return {action, my_distribution};
 }
 
