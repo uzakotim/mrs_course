@@ -222,25 +222,32 @@ std::tuple<bool, double> Swarm::weightingFunction(const double distance, const d
 
   // TODO: Filling this function is compulsory!
   double coef = 0.0;
-  std::cout<<"distance: "<<distance<<'\n';
-  std::cout<<"desired: "<<desired_distance<<'\n';
-  if(distance<safety_distance)
+  // std::cout<<"distance: "<<distance<<'\n';
+  // std::cout<<"desired: "<<desired_distance<<'\n';
+  if (distance<=0)
   {
-      return {false, visibility-distance};
+    return {false, 0.0};
   }
-  else
+  if(distance<=safety_distance)
   {
-      if (distance>visibility)
-      {
-        coef = 0.0;
-      }
-      else
-      {
-        coef = 1.0/(distance-safety_distance);
-      }
+    return {false,0.0};
   }
-  std::cout<<"result: "<<coef*distance<<'\n';
-  return {true, coef*distance};
+  else 
+  {
+    if (distance>visibility)
+    {
+      coef = 0.0;
+    }
+    else
+    {
+      std::cout<<"distance:"<<distance<<'\n';
+      std::cout<<"safety:"<<safety_distance<<'\n';
+      coef = 0.5/(distance-safety_distance);
+    }
+
+  }
+  std::cout<<coef<<'\n';
+  return {true, coef};
 }
 
 //}

@@ -11,5 +11,6 @@
         "utility": "cpp",
         "variant": "cpp",
         "iostream": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/packages/evaluation"
 }

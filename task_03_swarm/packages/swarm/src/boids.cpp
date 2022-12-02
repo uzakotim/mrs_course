@@ -116,7 +116,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
     my_distribution = state.beacon_distribution;
     for (int i =0;i<4;i++)
     {
-        my_distribution.set(i,0.5*state.beacon_distribution.get(i)+0.5*neighbours_color(i));
+        my_distribution.set(i,user_params.param5*state.beacon_distribution.get(i)+(1.0-user_params.param5)*neighbours_color(i));
     }
   }
   else
@@ -127,7 +127,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
     }
   }
 
-  action = user_params.param1*alignment + user_params.param2*target + separation + user_params.param3*cohesion;  
+  action = user_params.param1*alignment + user_params.param2*target + user_params.param4*separation + user_params.param3*cohesion;  
   return {action, my_distribution};
 }
 
