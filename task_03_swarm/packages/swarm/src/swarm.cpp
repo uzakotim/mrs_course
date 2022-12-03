@@ -65,13 +65,17 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   double          current_time   = perception.time;
   Eigen::Vector3d vec_navigation = perception.target_vector;
   Eigen::Vector3d vec_separation = Eigen::Vector3d::Zero();
+  Eigen::Vector3d vec_alignment  = Eigen::Vector3d::Zero();
+  Eigen::Vector3d vec_cohesion   = Eigen::Vector3d::Zero();
 
   // Access custom parameters
   double param1 = user_params.param1;
   double param2 = user_params.param2;
+  double param3 = user_params.param3;
+  double param4 = user_params.param4;
 
   // Variables initialization
-  bool compute_action = false;
+  bool compute_action = true;
 
   // STATE MACHINE BEGINNING
   switch (_state_) {
@@ -149,12 +153,20 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
       std::tie(weight_defined, weight) = weightingFunction(n_dist, _visibility_radius_, SAFETY_DISTANCE_UAVS, DESIRED_DISTANCE_UAVS);
 
       if (weight_defined) {
+        vec_separation+=weight*n_pos;
         // probably use the weight
       } else {
+        vec_separation+=20.0*n_pos;
         // possibly use some backup weight
       }
+      vec_cohesion += n_pos;
     }
 
+    if (perception.neighbors.size()>0)
+    {
+      vec_separation *= (-1.0/perception.neighbors.size());
+      vec_cohesion   *= (1.0/perception.neighbors.size());
+    }
     // | ----------------- Separate from obstacles ---------------- |
 
     auto gates = perception.obstacles.gates;
@@ -180,9 +192,9 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
     // | ---------------------- weight forces --------------------- |
     vec_navigation *= param1;
     vec_separation *= param2;
-
+    vec_cohesion   *= param3;
     // | ------------------- sum the subvectors ------------------- |
-    vec_action = vec_navigation + vec_separation;
+    vec_action = vec_navigation + vec_separation + vec_cohesion;
     printVector3d(vec_action, "Action:");
 
     // | ------------------------ visualize ----------------------- |

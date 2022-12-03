@@ -60,7 +60,6 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
 
   int          dim             = my_distribution.dim();
   const int n_neighbours = state.neighbors_states.size();
-  double coef_alignment = 0;
 
   for (const auto &n_state : state.neighbors_states) {
 
@@ -84,13 +83,13 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
         coef = 0.5/(n_dist-1.0);
       }
     }
-
     
     // check if the size of my prob. distribution matches the size of the neighbour's distribution
     if (dim != n_distribution.dim()) {
       std::cout << "This should never happen. If it did, you set the previous distribution wrongly." << std::endl;
     }
-    alignment  += n_vel_global;
+    alignment  += 0.5*n_vel_global;
+    alignment  += 0.5*coef*n_vel_global;
     separation += coef*n_pos_rel;
     cohesion   += n_pos_rel;
 
