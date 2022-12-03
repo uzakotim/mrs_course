@@ -3,7 +3,7 @@ version: "1.0.0"
 # FEEL FREE TO PLAY WITH THIS CONFIG FILE
 # BUT BEWARE THAT IT WON'T BE OVERWRITTEN DURING EVALUATION
 
-rate: 15               # (Hz): use to slow down or speed up the simulation
+rate: 30               # (Hz): use to slow down or speed up the simulation
 stop_after_finish: false # If to stop the task once it fails
 
 # VALIDATION
