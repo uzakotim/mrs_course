@@ -54,7 +54,6 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   Eigen::Vector3d cohesion   = Eigen::Vector3d::Zero();
   Eigen::Vector4d neighbours_color = Eigen::Vector4d::Zero();
   Distribution my_distribution = state.distribution;
-  
   neighbours_color << my_distribution.get(0),my_distribution.get(1),my_distribution.get(2),my_distribution.get(3);
 
 
