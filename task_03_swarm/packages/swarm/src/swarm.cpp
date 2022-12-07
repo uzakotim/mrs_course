@@ -52,162 +52,229 @@ void Swarm::init(const double visibility_radius) {
  *
  *       Example 1: v_max=0.75 -> vector (1, 0, 1) will be saturated to 0.75*(1, 0, 0).
  */
+Eigen::Vector3d Swarm::calculateCohesion(const Perception_t &perception,const UserParams_t &user_params)
+{
+  Eigen::Vector3d result (0,0,0);
+  for (auto& uav : perception.neighbors)
+  {
+    result += uav.position;
+  }
+  result *= (1.0/perception.neighbors.size());
+  return result;
+}
+Eigen::Vector3d Swarm::calculateAttraction(const Perception_t &perception,const UserParams_t &user_params){
+
+  Eigen::Vector3d result (cos(user_params.param5),sin(user_params.param5),0);
+  return result;
+}
+Eigen::Vector3d Swarm::calculateSeparation(const Perception_t &perception,const UserParams_t &user_params){
+
+  Eigen::Vector3d result (0,0,0);
+  for (auto& uav : perception.neighbors)
+  {
+    auto [defined, weight] = weightingFunction(uav.position.norm(),_visibility_radius_,user_params.param9,0.0);
+    double final_weight;
+    if (defined)
+    {
+      final_weight = weight;
+    }
+    else
+    {
+      final_weight = 1e6;
+    }
+    result += final_weight*uav.position;
+  }
+  result *= (-1.0/perception.neighbors.size());
+  return result;
+}
+Eigen::Vector3d Swarm::calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params){
+
+  Eigen::Vector3d result (0,0,0);
+  auto [defined, weight] = weightingFunction(perception.obstacles.closest.norm(),_visibility_radius_,user_params.param9,0.0);
+  double final_weight;
+  if (defined)
+  {
+    final_weight = weight;
+  }
+  else
+  {
+    final_weight = 1e6;
+  }
+  result = -final_weight*perception.obstacles.closest;
+  return result;
+}
 Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserParams_t &user_params, const ActionHandlers_t &action_handlers) {
 
-  // TODO STUDENTS: Finish this method. The example code below can be removed, it's there just for an inspiration.
+  // return desired velocity
 
-  // | ------------------- EXAMPLE CODE START ------------------- |
+  
+  Eigen::Vector3d result;
 
-  // Setup output control signal
-  Eigen::Vector3d vec_action = Eigen::Vector3d::Zero();
+  Eigen::Vector3d cohesion   = user_params.param1*calculateCohesion(perception,user_params);
+  Eigen::Vector3d separation = user_params.param2*calculateSeparation(perception,user_params);
+  Eigen::Vector3d avoidance  = user_params.param3*calculateAvoidance(perception,user_params);
+  Eigen::Vector3d attraction = user_params.param4*calculateAttraction(perception,user_params);
 
-  // Access the perception struct
-  double          current_time   = perception.time;
-  Eigen::Vector3d vec_navigation = perception.target_vector;
-  Eigen::Vector3d vec_separation = Eigen::Vector3d::Zero();
-  Eigen::Vector3d vec_alignment  = Eigen::Vector3d::Zero();
-  Eigen::Vector3d vec_cohesion   = Eigen::Vector3d::Zero();
+  action_handlers.visualizeArrow("cohesion", cohesion, Color_t{1.0, 0.0, 0.0, 1.0});
+  action_handlers.visualizeArrow("separation", separation, Color_t{0.0, 1.0, 0.0, 1.0});
+  action_handlers.visualizeArrow("avoidance", avoidance, Color_t{0.0, 0.0, 1.0, 1.0});
+  action_handlers.visualizeArrow("attraction", attraction, Color_t{1.0, 1.0, 1.0, 0.5});
 
-  // Access custom parameters
-  double param1 = user_params.param1;
-  double param2 = user_params.param2;
-  double param3 = user_params.param3;
-  double param4 = user_params.param4;
+  return cohesion + attraction + separation + avoidance;
 
-  // Variables initialization
-  bool compute_action = true;
 
-  // STATE MACHINE BEGINNING
-  switch (_state_) {
+  // // | ------------------- EXAMPLE CODE START ------------------- |
 
-      /* case INIT_STATE //{ */
+  // // Setup output control signal
+  // Eigen::Vector3d vec_action = Eigen::Vector3d::Zero();
 
-    case INIT_STATE: {
+  // // Access the perception struct
+  // double          current_time   = perception.time;
+  // Eigen::Vector3d vec_navigation = perception.target_vector;
+  // Eigen::Vector3d vec_separation = Eigen::Vector3d::Zero();
+  // Eigen::Vector3d vec_alignment  = Eigen::Vector3d::Zero();
+  // Eigen::Vector3d vec_cohesion   = Eigen::Vector3d::Zero();
 
-      std::cout << "Current state: " << stateToString(INIT_STATE) << std::endl;
+  // // Access custom parameters
+  // double param1 = user_params.param1;
+  // double param2 = user_params.param2;
+  // double param3 = user_params.param3;
+  // double param4 = user_params.param4;
 
-      std::cout << "Changing to state: " << stateToString(AGREEING_ON_DIRECTION) << std::endl;
-      _state_          = AGREEING_ON_DIRECTION;
-      idling_time_init = current_time;
+  // // Variables initialization
+  // bool compute_action = true;
 
-      // You may share three variables to all other agents (beware, the network is asynchronous and UDP-based: no message is assured to reach all the others)
-      // CPP enum values are represented by integers by default in ascending order. You may hence send your own state to others like this:
-      action_handlers.shareVariables(INIT_STATE, 0, 0.0);
+  // // STATE MACHINE BEGINNING
+  // switch (_state_) {
 
-      // We have prepared two basic enums for you: State_t defined in student_headers/swarm.h and task_03_common/Direction_t in direction.h.
-      // You may share both and add a double value, e.g.:
-      _navigation_direction_ = NONE;
-      action_handlers.shareVariables(INIT_STATE, _navigation_direction_, 3.1415);
+  //     /* case INIT_STATE //{ */
 
-      // The values of others can be accessed like this:
-      // SharedVariables_t n_0_shared_vars = perception.neighbors[0].shared_variables;
-      // int a = n_0_shared_vars.int1;
-      // int b = n_0_shared_vars.int2;
-      // double c = n_0_shared_vars.dbl;
+  //   case INIT_STATE: {
 
-      break;
-    }
+  //     std::cout << "Current state: " << stateToString(INIT_STATE) << std::endl;
 
-      //}
+  //     std::cout << "Changing to state: " << stateToString(AGREEING_ON_DIRECTION) << std::endl;
+  //     _state_          = AGREEING_ON_DIRECTION;
+  //     idling_time_init = current_time;
 
-      /* case AGREEING_ON_DIRECTION() //{ */
+  //     // You may share three variables to all other agents (beware, the network is asynchronous and UDP-based: no message is assured to reach all the others)
+  //     // CPP enum values are represented by integers by default in ascending order. You may hence send your own state to others like this:
+  //     action_handlers.shareVariables(INIT_STATE, 0, 0.0);
 
-    case AGREEING_ON_DIRECTION: {
+  //     // We have prepared two basic enums for you: State_t defined in student_headers/swarm.h and task_03_common/Direction_t in direction.h.
+  //     // You may share both and add a double value, e.g.:
+  //     _navigation_direction_ = NONE;
+  //     action_handlers.shareVariables(INIT_STATE, _navigation_direction_, 3.1415);
 
-      std::cout << "Current state: " << stateToString(AGREEING_ON_DIRECTION) << std::endl;
+  //     // The values of others can be accessed like this:
+  //     // SharedVariables_t n_0_shared_vars = perception.neighbors[0].shared_variables;
+  //     // int a = n_0_shared_vars.int1;
+  //     // int b = n_0_shared_vars.int2;
+  //     // double c = n_0_shared_vars.dbl;
 
-      if (_navigation_direction_ == NONE) {
-        _navigation_direction_ = targetToDirection(perception.target_vector);
-      }
+  //     break;
+  //   }
 
-      // Compute majority
-      std::vector<int> directions                                = {directionToInt(_navigation_direction_)};
-      auto             counts                                    = countIntegers(directions);
-      [[maybe_unused]] const auto &[majority_idx, majority_freq] = getMajority(counts);
+  //     //}
 
-      bool direction_agreed = true;
+  //     /* case AGREEING_ON_DIRECTION() //{ */
 
-      if (direction_agreed) {
-        std::cout << "Selected direction: " << directionToString(_navigation_direction_) << std::endl;
-      }
+  //   case AGREEING_ON_DIRECTION: {
 
-      break;
-    }
+  //     std::cout << "Current state: " << stateToString(AGREEING_ON_DIRECTION) << std::endl;
 
-      //}
-  }
+  //     if (_navigation_direction_ == NONE) {
+  //       _navigation_direction_ = targetToDirection(perception.target_vector);
+  //     }
 
-  // STATE MACHINE END
+  //     // Compute majority
+  //     std::vector<int> directions                                = {directionToInt(_navigation_direction_)};
+  //     auto             counts                                    = countIntegers(directions);
+  //     [[maybe_unused]] const auto &[majority_idx, majority_freq] = getMajority(counts);
 
-  if (compute_action) {
+  //     bool direction_agreed = true;
 
-    // | --------------- Separate from other agents --------------- |
+  //     if (direction_agreed) {
+  //       std::cout << "Selected direction: " << directionToString(_navigation_direction_) << std::endl;
+  //     }
 
-    for (const auto &n : perception.neighbors) {
-      Eigen::Vector3d n_pos  = n.position;
-      double          n_dist = n_pos.norm();
+  //     break;
+  //   }
 
-      // You may want to use the weighting function you should have prepared first
-      bool   weight_defined;
-      double weight;
-      std::tie(weight_defined, weight) = weightingFunction(n_dist, _visibility_radius_, SAFETY_DISTANCE_UAVS, DESIRED_DISTANCE_UAVS);
+  //     //}
+  // }
 
-      if (weight_defined) {
-        vec_separation+=weight*n_pos;
-        // probably use the weight
-      } else {
-        vec_separation+=20.0*n_pos;
-        // possibly use some backup weight
-      }
-      vec_cohesion += n_pos;
-    }
+  // // STATE MACHINE END
 
-    if (perception.neighbors.size()>0)
-    {
-      vec_separation *= (-1.0/perception.neighbors.size());
-      vec_cohesion   *= (1.0/perception.neighbors.size());
-    }
-    // | ----------------- Separate from obstacles ---------------- |
+  // if (compute_action) {
 
-    auto gates = perception.obstacles.gates;
+  //   // | --------------- Separate from other agents --------------- |
 
-    // You may access the gates relative to your body frame
-    Eigen::Vector3d G1_p = gates[0].first;
-    Eigen::Vector3d G1_n = gates[0].second;
+  //   for (const auto &n : perception.neighbors) {
+  //     Eigen::Vector3d n_pos  = n.position;
+  //     double          n_dist = n_pos.norm();
 
-    // Or you may iterate over them
-    for (const auto &G : gates) {
-      const auto G_p = G.first;
-    }
+  //     // You may want to use the weighting function you should have prepared first
+  //     bool   weight_defined;
+  //     double weight;
+  //     std::tie(weight_defined, weight) = weightingFunction(n_dist, _visibility_radius_, SAFETY_DISTANCE_UAVS, DESIRED_DISTANCE_UAVS);
 
-    // Or you may want to find:
-    //  the closest gate:
-    unsigned int closest_gate_idx = selectGateClosest(perception.obstacles);
-    auto         closest_gate     = perception.obstacles.gates[closest_gate_idx];
+  //     if (weight_defined) {
+  //       vec_separation+=weight*n_pos;
+  //       // probably use the weight
+  //     } else {
+  //       vec_separation+=20.0*n_pos;
+  //       // possibly use some backup weight
+  //     }
+  //     vec_cohesion += n_pos;
+  //   }
 
-    //  the gate for the direction:
-    unsigned int gate_in_direction_idx = selectGateInDirection(UP, perception.obstacles);
-    auto         gate_in_direction     = perception.obstacles.gates[gate_in_direction_idx];
+  //   if (perception.neighbors.size()>0)
+  //   {
+  //     vec_separation *= (-1.0/perception.neighbors.size());
+  //     vec_cohesion   *= (1.0/perception.neighbors.size());
+  //   }
+  //   // | ----------------- Separate from obstacles ---------------- |
 
-    // | ---------------------- weight forces --------------------- |
-    vec_navigation *= param1;
-    vec_separation *= param2;
-    vec_cohesion   *= param3;
-    // | ------------------- sum the subvectors ------------------- |
-    vec_action = vec_navigation + vec_separation + vec_cohesion;
-    printVector3d(vec_action, "Action:");
+  //   auto gates = perception.obstacles.gates;
 
-    // | ------------------------ visualize ----------------------- |
-    action_handlers.visualizeArrow("separation", vec_separation, Color_t{1.0, 0.0, 0.0, 0.5});
-    action_handlers.visualizeArrow("navigation", vec_navigation, Color_t{0.0, 0.0, 1.0, 0.5});
-  }
+  //   // You may access the gates relative to your body frame
+  //   Eigen::Vector3d G1_p = gates[0].first;
+  //   Eigen::Vector3d G1_n = gates[0].second;
 
-  action_handlers.visualizeArrow("target", perception.target_vector, Color_t{1.0, 1.0, 1.0, 0.5});
-  action_handlers.visualizeArrow("action", vec_action, Color_t{0.0, 0.0, 0.0, 1.0});
+  //   // Or you may iterate over them
+  //   for (const auto &G : gates) {
+  //     const auto G_p = G.first;
+  //   }
 
-  // | -------------------- EXAMPLE CODE END -------------------- |
+  //   // Or you may want to find:
+  //   //  the closest gate:
+  //   unsigned int closest_gate_idx = selectGateClosest(perception.obstacles);
+  //   auto         closest_gate     = perception.obstacles.gates[closest_gate_idx];
 
-  return vec_action;
+  //   //  the gate for the direction:
+  //   unsigned int gate_in_direction_idx = selectGateInDirection(UP, perception.obstacles);
+  //   auto         gate_in_direction     = perception.obstacles.gates[gate_in_direction_idx];
+
+  //   // | ---------------------- weight forces --------------------- |
+  //   vec_navigation *= param1;
+  //   vec_separation *= param2;
+  //   vec_cohesion   *= param3;
+  //   // | ------------------- sum the subvectors ------------------- |
+  //   vec_action = vec_navigation + vec_separation + vec_cohesion;
+  //   printVector3d(vec_action, "Action:");
+
+  //   // | ------------------------ visualize ----------------------- |
+  //   action_handlers.visualizeArrow("separation", vec_separation, Color_t{1.0, 0.0, 0.0, 0.5});
+  //   action_handlers.visualizeArrow("navigation", vec_navigation, Color_t{0.0, 0.0, 1.0, 0.5});
+  // }
+
+  // action_handlers.visualizeArrow("target", perception.target_vector, Color_t{1.0, 1.0, 1.0, 0.5});
+  // action_handlers.visualizeArrow("action", vec_action, Color_t{0.0, 0.0, 0.0, 1.0});
+
+  // // | -------------------- EXAMPLE CODE END -------------------- |
+
+  // return vec_action;
 }
 
 //}

@@ -106,6 +106,10 @@ private:
   std::map<int, int>   countIntegers(const std::vector<int> &integers);
   std::tuple<int, int> getMajority(const std::vector<int> &integers);
   std::tuple<int, int> getMajority(const std::map<int, int> &integer_counts);
+  Eigen::Vector3d calculateCohesion(const Perception_t &perception,const UserParams_t &user_params);
+  Eigen::Vector3d calculateAttraction(const Perception_t &perception,const UserParams_t &user_params);
+  Eigen::Vector3d calculateSeparation(const Perception_t &perception,const UserParams_t &user_params);
+  Eigen::Vector3d calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params);
 };
 
 }  // namespace task_03_swarm
