@@ -110,15 +110,27 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   
   Eigen::Vector3d result;
 
+  int int_var_1 = 1;
+  int int_var_2 = 2;
+  double double_var_3 = -2;
+
+  action_handlers.shareVariables(int_var_1,int_var_2,double_var_3);
+  int neigh_0_int_1 = perception.neighbors[0].shared_variables.int1;
+
   Eigen::Vector3d cohesion   = user_params.param1*calculateCohesion(perception,user_params);
   Eigen::Vector3d separation = user_params.param2*calculateSeparation(perception,user_params);
   Eigen::Vector3d avoidance  = user_params.param3*calculateAvoidance(perception,user_params);
   Eigen::Vector3d attraction = user_params.param4*calculateAttraction(perception,user_params);
 
-  action_handlers.visualizeArrow("cohesion", cohesion, Color_t{1.0, 0.0, 0.0, 1.0});
-  action_handlers.visualizeArrow("separation", separation, Color_t{0.0, 1.0, 0.0, 1.0});
-  action_handlers.visualizeArrow("avoidance", avoidance, Color_t{0.0, 0.0, 1.0, 1.0});
-  action_handlers.visualizeArrow("attraction", attraction, Color_t{1.0, 1.0, 1.0, 0.5});
+  // action_handlers.visualizeArrow("cohesion", cohesion, Color_t{1.0, 0.0, 0.0, 1.0});
+  // action_handlers.visualizeArrow("separation", separation, Color_t{0.0, 1.0, 0.0, 1.0});
+  // action_handlers.visualizeArrow("avoidance", avoidance, Color_t{0.0, 0.0, 1.0, 1.0});
+  // action_handlers.visualizeArrow("attraction", attraction, Color_t{1.0, 1.0, 1.0, 0.5});
+  action_handlers.visualizeArrow("target",perception.target_vector, Color_t{1.0, 1.0, 1.0, 0.5});
+
+  // use gates as virtual agents 
+  // maybe to turn off some components
+  
 
   return cohesion + attraction + separation + avoidance;
 

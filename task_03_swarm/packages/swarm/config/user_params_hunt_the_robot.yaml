@@ -1,9 +1,9 @@
-param1: 0.2
-param2: 0.6
-param3: 1.0
-param4: 1.0
-param5: 1.57
+param1: 0.2 #cohesion
+param2: 0.6 #separation
+param3: 1.0 #avoidance
+param4: 1.0 #attraction
+param5: 1.57 #direction of the target
 param6: 0.0
 param7: 0.0
 param8: 0.0
-param9: 0.8
+param9: 0.8 # weighting threshold

@@ -54,8 +54,9 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
   Eigen::Vector3d cohesion   = Eigen::Vector3d::Zero();
   Eigen::Vector4d neighbours_color = Eigen::Vector4d::Zero();
   Distribution my_distribution = state.distribution;
+  
   neighbours_color << my_distribution.get(0),my_distribution.get(1),my_distribution.get(2),my_distribution.get(3);
-
+  double coef_alignment = 0.0;
 
   int          dim             = my_distribution.dim();
   const int n_neighbours = state.neighbors_states.size();
@@ -90,7 +91,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
     alignment  += 0.5*n_vel_global;
     alignment  += 0.5*coef*n_vel_global;
     separation += coef*n_pos_rel;
-    cohesion   += n_pos_rel;
+    cohesion   += n_pos_rel/coef;
 
     for (int i =0;i<4;i++)
     {
