@@ -62,9 +62,7 @@ Eigen::Vector3d Swarm::calculateCohesion(const Perception_t &perception,const Us
   result *= (1.0/perception.neighbors.size());
   return result;
 }
-Eigen::Vector3d Swarm::calculateAttraction(const Perception_t &perception,const UserParams_t &user_params){
-
-  Eigen::Vector3d result (cos(user_params.param5),sin(user_params.param5),0);
+Eigen::Vector3d Swarm::calculateAttraction(const Eigen::Vector3d &result,const UserParams_t &user_params){
   return result;
 }
 Eigen::Vector3d Swarm::calculateSeparation(const Perception_t &perception,const UserParams_t &user_params){
@@ -109,30 +107,48 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
 
   
   Eigen::Vector3d result;
-
   int int_var_1 = 1;
   int int_var_2 = 2;
-  double double_var_3 = -2;
-
+  double double_var_3 = std::atan2(perception.target_vector[1],perception.target_vector[0]);
   action_handlers.shareVariables(int_var_1,int_var_2,double_var_3);
-  int neigh_0_int_1 = perception.neighbors[0].shared_variables.int1;
+
+  double neigh_0_angle = perception.neighbors[0].shared_variables.dbl;
+  double neigh_1_angle = perception.neighbors[1].shared_variables.dbl;
+  double threshold = 0.01;
+
+  if ((std::abs(double_var_3 - neigh_0_angle)<threshold) && (std::abs(double_var_3 - neigh_1_angle)<threshold))
+  {
+    result = perception.target_vector;
+  }
+  else if ((std::abs(double_var_3 - neigh_0_angle)>threshold) && (std::abs(double_var_3 - neigh_1_angle)<threshold))
+  {
+    result = perception.target_vector;
+  }
+  else if ((std::abs(double_var_3 - neigh_0_angle)<threshold) && (std::abs(double_var_3 - neigh_1_angle)>threshold))
+  {
+    result = perception.target_vector;
+  }
+  else
+  {
+    result = Eigen::Vector3d (cos(neigh_0_angle),sin(neigh_0_angle),0);
+  }
 
   Eigen::Vector3d cohesion   = user_params.param1*calculateCohesion(perception,user_params);
   Eigen::Vector3d separation = user_params.param2*calculateSeparation(perception,user_params);
-  Eigen::Vector3d avoidance  = user_params.param3*calculateAvoidance(perception,user_params);
-  Eigen::Vector3d attraction = user_params.param4*calculateAttraction(perception,user_params);
+  Eigen::Vector3d avoidance  = user_params.param3*calculateAvoidance(perception,user_params); 
+  Eigen::Vector3d attraction = user_params.param4*calculateAttraction(result,user_params);
 
   // action_handlers.visualizeArrow("cohesion", cohesion, Color_t{1.0, 0.0, 0.0, 1.0});
   // action_handlers.visualizeArrow("separation", separation, Color_t{0.0, 1.0, 0.0, 1.0});
   // action_handlers.visualizeArrow("avoidance", avoidance, Color_t{0.0, 0.0, 1.0, 1.0});
   // action_handlers.visualizeArrow("attraction", attraction, Color_t{1.0, 1.0, 1.0, 0.5});
-  action_handlers.visualizeArrow("target",perception.target_vector, Color_t{1.0, 1.0, 1.0, 0.5});
+  action_handlers.visualizeArrow("target",result, Color_t{1.0, 1.0, 1.0, 0.5});
 
   // use gates as virtual agents 
   // maybe to turn off some components
   
 
-  return cohesion + attraction + separation + avoidance;
+  return 0.0*cohesion + attraction + separation + avoidance;
 
 
   // // | ------------------- EXAMPLE CODE START ------------------- |
