@@ -59,7 +59,15 @@ Eigen::Vector3d Swarm::calculateCohesion(const Perception_t &perception,const Us
   {
     result += uav.position;
   }
-  result *= (1.0/perception.neighbors.size());
+  
+  // // for (auto& gate : perception.obstacles.gates)
+  // // {
+  // //   result += gate.first;
+  // //   result += gate.second;
+  // // }
+  // result *= (1.0/(perception.neighbors.size()+2*perception.obstacles.gates.size()));
+  result *= (1.0/(perception.neighbors.size()));
+  
   return result;
 }
 Eigen::Vector3d Swarm::calculateAttraction(const Eigen::Vector3d &result,const UserParams_t &user_params){
@@ -82,7 +90,34 @@ Eigen::Vector3d Swarm::calculateSeparation(const Perception_t &perception,const 
     }
     result += final_weight*uav.position;
   }
-  result *= (-1.0/perception.neighbors.size());
+  // for (auto& gate : perception.obstacles.gates)
+  // {
+  //   auto [defined, weight] = weightingFunction(gate.first.norm(),_visibility_radius_,user_params.param9,0.0);
+  //   double final_weight;
+  //   if (defined)
+  //   {
+  //     final_weight = weight;
+  //   }
+  //   else
+  //   {
+  //     final_weight = 1e6;
+  //   }
+  //   result += final_weight*gate.first;
+
+
+  //   auto [defined2, weight2] = weightingFunction(gate.second.norm(),_visibility_radius_,user_params.param9,0.0);
+  //   if (defined2)
+  //   {
+  //     final_weight = weight2;
+  //   }
+  //   else
+  //   {
+  //     final_weight = 1e6;
+  //   }
+  //   result += final_weight*gate.second;
+  // }
+  // result *= (-1.0/(perception.neighbors.size()+2*perception.obstacles.gates.size()));
+  result *= (-1.0/(perception.neighbors.size()));
   return result;
 }
 Eigen::Vector3d Swarm::calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params){
@@ -98,7 +133,31 @@ Eigen::Vector3d Swarm::calculateAvoidance(const Perception_t &perception,const U
   {
     final_weight = 1e6;
   }
-  result = -final_weight*perception.obstacles.closest;
+
+  result += final_weight*perception.obstacles.closest;
+  unsigned int idx = Swarm::selectGateClosest(perception.obstacles);
+
+  auto [defined2, weight2] = weightingFunction(perception.obstacles.gates[idx].first.norm(),_visibility_radius_,user_params.param9,0.0);
+  if (defined2)
+  {
+    final_weight = weight2;
+  }
+  else
+  {
+    final_weight = 1e6;
+  }
+  result +=final_weight*perception.obstacles.gates[idx].first;
+  auto [defined3, weight3] = weightingFunction(perception.obstacles.gates[idx].second.norm(),_visibility_radius_,user_params.param9,0.0);
+  if (defined3)
+  {
+    final_weight = weight3;
+  }
+  else
+  {
+    final_weight = 1e6;
+  }
+  result +=final_weight*perception.obstacles.gates[idx].second;
+  result *= (-1.0/3);
   return result;
 }
 Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserParams_t &user_params, const ActionHandlers_t &action_handlers) {
@@ -114,23 +173,17 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
 
   double neigh_0_angle = perception.neighbors[0].shared_variables.dbl;
   double neigh_1_angle = perception.neighbors[1].shared_variables.dbl;
-  double threshold = 0.01;
+  std::cout<<(std::abs(double_var_3 - neigh_0_angle))<<'\n';
 
-  if ((std::abs(double_var_3 - neigh_0_angle)<threshold) && (std::abs(double_var_3 - neigh_1_angle)<threshold))
+  double threshold = 1.0;
+
+  if ((std::abs(double_var_3 - neigh_0_angle)>threshold) && (std::abs(double_var_3 - neigh_1_angle)>threshold))
   {
-    result = perception.target_vector;
-  }
-  else if ((std::abs(double_var_3 - neigh_0_angle)>threshold) && (std::abs(double_var_3 - neigh_1_angle)<threshold))
-  {
-    result = perception.target_vector;
-  }
-  else if ((std::abs(double_var_3 - neigh_0_angle)<threshold) && (std::abs(double_var_3 - neigh_1_angle)>threshold))
-  {
-    result = perception.target_vector;
+    result = Eigen::Vector3d (cos(neigh_0_angle),sin(neigh_0_angle),0);
   }
   else
   {
-    result = Eigen::Vector3d (cos(neigh_0_angle),sin(neigh_0_angle),0);
+    result = perception.target_vector;
   }
 
   Eigen::Vector3d cohesion   = user_params.param1*calculateCohesion(perception,user_params);
@@ -138,17 +191,17 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   Eigen::Vector3d avoidance  = user_params.param3*calculateAvoidance(perception,user_params); 
   Eigen::Vector3d attraction = user_params.param4*calculateAttraction(result,user_params);
 
-  // action_handlers.visualizeArrow("cohesion", cohesion, Color_t{1.0, 0.0, 0.0, 1.0});
-  // action_handlers.visualizeArrow("separation", separation, Color_t{0.0, 1.0, 0.0, 1.0});
-  // action_handlers.visualizeArrow("avoidance", avoidance, Color_t{0.0, 0.0, 1.0, 1.0});
-  // action_handlers.visualizeArrow("attraction", attraction, Color_t{1.0, 1.0, 1.0, 0.5});
+  action_handlers.visualizeArrow("cohesion", cohesion, Color_t{1.0, 0.0, 0.0, 1.0});
+  action_handlers.visualizeArrow("separation", separation, Color_t{0.0, 1.0, 0.0, 1.0});
+  action_handlers.visualizeArrow("avoidance", avoidance, Color_t{0.0, 0.0, 1.0, 1.0});
+  action_handlers.visualizeArrow("attraction", attraction, Color_t{1.0, 1.0, 1.0, 0.5});
   action_handlers.visualizeArrow("target",result, Color_t{1.0, 1.0, 1.0, 0.5});
 
   // use gates as virtual agents 
   // maybe to turn off some components
   
 
-  return 0.0*cohesion + attraction + separation + avoidance;
+  return cohesion + attraction + separation + avoidance;
 
 
   // // | ------------------- EXAMPLE CODE START ------------------- |
