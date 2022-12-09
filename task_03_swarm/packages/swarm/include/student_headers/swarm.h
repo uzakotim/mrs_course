@@ -72,7 +72,8 @@ public:
 private:
   // | -------------- PUT ANY MEMBER VARIABLES HERE ------------- |
   double idling_time_init;
-
+  size_t counter{0};
+  Eigen::Vector3d direction = Eigen::Vector3d(0,0,0); 
   // Constant variables: just an example, feel free to change them
   const double SAFETY_DISTANCE_UAVS  = 2.0;
   const double DESIRED_DISTANCE_UAVS = 3.0;
