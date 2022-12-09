@@ -68,7 +68,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
     double coef = 0;
     [[maybe_unused]] double n_dist = n_pos_rel.norm();
 
-    if(n_dist<=1.0)
+    if(n_dist<=user_params.param5)
     {
       coef = 10;
     }
@@ -80,7 +80,7 @@ std::tuple<Eigen::Vector3d, Distribution> Boids::updateAgentState(const AgentSta
       }
       else
       {
-        coef = 0.5/(n_dist-1.0);
+        coef = 0.5/(n_dist-user_params.param5);
       }
     }
     

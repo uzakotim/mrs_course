@@ -1,9 +1,10 @@
 param1: 14.0 #14
-param2: 0.88 #0.8
+param2: 0.88 #0.88
 # cohesion
 param3: 1.0
-param4: 2.5
-param5: 0.5
+# separation
+param4: 3.5
+param5: 0.8
 param6: 0.0
 param7: 0.0
 param8: 0.0
@@ -12,12 +13,11 @@ param9: 0.0
 
 # last successful
 
-# param1: 5.0
-# # target
-# param2: 0.25
+# param1: 14.0 #14
+# param2: 0.88 #0.88
 # # cohesion
-# param3: 0.75
-# param4: 1.0
+# param3: 1.0
+# param4: 2.5
 # param5: 0.5
 # param6: 0.0
 # param7: 0.0
