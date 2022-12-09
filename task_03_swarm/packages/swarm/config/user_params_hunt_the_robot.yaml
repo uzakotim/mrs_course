@@ -1,9 +1,9 @@
-param1: 0.2 #cohesion
+param1: 0.1 #cohesion
 param2: 0.6 #separation
-param3: 1.0 #avoidance
+param3: 5.0 #avoidance
 param4: 1.0 #attraction
-param5: 1.57 #direction of the target
-param6: 100 # number of counts after direction selection
-param7: 3.0
-param8: 1.0
-param9: 2.0 # 0.8 # weighting threshold
+param5: 0.5 #theshold angle consensus;
+param6: 50 # number of counts after direction selection
+param7: 3.0 # distance to gate
+param8: 0.8
+param9: 0.8 # 0.8 # safety distance

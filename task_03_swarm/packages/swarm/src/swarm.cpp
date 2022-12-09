@@ -65,6 +65,7 @@ Eigen::Vector3d Swarm::calculateCohesion(const Perception_t &perception,const Us
     }
     result *= (1.0/(perception.neighbors.size()));
   }
+  // if distance to gate is lower -> I don't coheate
   return result;
 }
 Eigen::Vector3d Swarm::calculateAttraction(const Eigen::Vector3d &result,const UserParams_t &user_params){
@@ -74,7 +75,7 @@ Eigen::Vector3d Swarm::calculateSeparation(const Perception_t &perception,const 
 
   Eigen::Vector3d result (0,0,0);
   unsigned int i = Swarm::selectGateClosest(perception.obstacles);
-  if ((perception.obstacles.gates[i].first.norm()>user_params.param7)||(perception.obstacles.gates[i].second.norm()>user_params.param7))
+  if ((perception.obstacles.gates[i].first.norm()<user_params.param7)||(perception.obstacles.gates[i].second.norm()<user_params.param7))
   {
     for (auto& uav : perception.neighbors)
     {
@@ -155,8 +156,9 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
 
   double neigh_0_angle = perception.neighbors[0].shared_variables.dbl;
   double neigh_1_angle = perception.neighbors[1].shared_variables.dbl;
+  unsigned int i = Swarm::selectGateClosest(perception.obstacles);
 
-  double threshold = 1.0;
+  double threshold = user_params.param5;
 
   if ((std::abs(double_var_3 - neigh_0_angle)>threshold) && (std::abs(double_var_3 - neigh_1_angle)>threshold))
   {
@@ -180,25 +182,28 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   }
   if (counter==0)
   {
-    if (((result_angle>7.0*M_PI/4.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/4.0)))
+    if ((perception.obstacles.gates[i].first.norm()>user_params.param7)||(perception.obstacles.gates[i].second.norm()>user_params.param7))
     {
-      std::cout<<"RIGHT"<<'\n';
-      direction = Eigen::Vector3d (10,0,0);
-    }
-    if ((result_angle>M_PI/4.0) && (result_angle<=3*M_PI/4.0))
-    {
-      std::cout<<"UP"<<'\n';
-      direction = Eigen::Vector3d (0,10,0);
-    }
-    if ((result_angle>3*M_PI/4.0) && (result_angle<=5*M_PI/4.0))
-    {
-      std::cout<<"LEFT"<<'\n';
-      direction = Eigen::Vector3d (-10,0,0);
-    }
-    if ((result_angle>5*M_PI/4.0) && (result_angle<=7*M_PI/4.0))
-    {
-      std::cout<<"DOWN"<<'\n';
-      direction = Eigen::Vector3d (0,-10,0);
+      if (((result_angle>7.0*M_PI/4.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/4.0)))
+      {
+        std::cout<<"RIGHT"<<'\n';
+        direction = Eigen::Vector3d (10,0,0);
+      }
+      if ((result_angle>M_PI/4.0) && (result_angle<=3*M_PI/4.0))
+      {
+        std::cout<<"UP"<<'\n';
+        direction = Eigen::Vector3d (0,10,0);
+      }
+      if ((result_angle>3*M_PI/4.0) && (result_angle<=5*M_PI/4.0))
+      {
+        std::cout<<"LEFT"<<'\n';
+        direction = Eigen::Vector3d (-10,0,0);
+      }
+      if ((result_angle>5*M_PI/4.0) && (result_angle<=7*M_PI/4.0))
+      {
+        std::cout<<"DOWN"<<'\n';
+        direction = Eigen::Vector3d (0,-10,0);
+      }
     }
   }
   // selecting direction
