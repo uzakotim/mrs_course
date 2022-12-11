@@ -176,11 +176,11 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   }
 
   
-  if (((perception.obstacles.gates[i].first.norm()+perception.obstacles.gates[i].second.norm())/2)<1.0)
+  if (((perception.obstacles.gates[i].first.norm()+perception.obstacles.gates[i].second.norm())/2)<3.0)
   {
     //reducing avoidance 4 times whenever close to a gate
       int_var_1 = 1;
-      avoidance_reduction = 0.0;
+      avoidance_reduction = 0.5;
     //reducing a
       cohesion_reduction  = 0.2;
   }
@@ -200,38 +200,46 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   { 
     if (((result_angle>11*M_PI/6.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/6.0)))
     {
-      std::cout<<"RIGHT"<<'\n';
+      // std::cout<<"RIGHT"<<'\n';
       direction = (perception.obstacles.gates[0].first+perception.obstacles.gates[0].second)/2.0;
       direction /= direction.norm();
     }
     if ((result_angle>M_PI/6.0) && (result_angle<=5*M_PI/6.0))
     {
-      std::cout<<"UP"<<'\n';
+      // std::cout<<"UP"<<'\n';
       direction = (perception.obstacles.gates[1].first+perception.obstacles.gates[1].second)/2.0;
       direction /= direction.norm();
     }
     if ((result_angle>5*M_PI/6.0) && (result_angle<=7*M_PI/6.0))
     {
-      std::cout<<"LEFT"<<'\n';
+      // std::cout<<"LEFT"<<'\n';
       direction = (perception.obstacles.gates[2].first+perception.obstacles.gates[2].second)/2.0;
       direction /= direction.norm();
     }
     if ((result_angle>7*M_PI/6.0) && (result_angle<=11*M_PI/6.0))
     {
-      std::cout<<"DOWN"<<'\n';
+      // std::cout<<"DOWN"<<'\n';
       direction = (perception.obstacles.gates[3].first+perception.obstacles.gates[3].second)/2.0;
       direction /= direction.norm();
     }
   }  
   
-  if ((neigh_flag_1 == 0) && (neigh_flag_2==0))
-  {
-    turn_on_attraction = 1.0;
-  }
-  else
-  {
-    turn_on_attraction = 0.2;
-  }
+  // std::cout <<"Near or far the gate: "<<int_var_1<<'\n';
+  // if (((neigh_flag_1 == 1) && (int_var_1 == 1))||((neigh_flag_2 == 1) && (int_var_1 == 1)))
+  // {
+    // // std::cout<<"Hello,world!Neighbour!"<<'\n';
+    // srand((unsigned) time(0));
+    // double coin = (float)rand() / (float)RAND_MAX;
+    // std::cout<<"coin : "<<coin<<'\n';
+    // if (coin<0.5)
+    // {
+    //   turn_on_attraction = -1.0;
+    // }
+    // else
+    // {
+    //   turn_on_attraction = 1.0;
+    // }
+  // }
 
   Eigen::Vector3d cohesion        = cohesion_reduction*user_params.param1*calculateCohesion(perception,user_params);
   Eigen::Vector3d separation      = user_params.param2*calculateSeparation(perception,user_params);
