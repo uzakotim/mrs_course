@@ -73,6 +73,7 @@ private:
   // | -------------- PUT ANY MEMBER VARIABLES HERE ------------- |
   double idling_time_init;
   size_t counter{0};
+  double prev_distance_to_gate {0.0};
   Eigen::Vector3d direction = Eigen::Vector3d(0,0,0); 
   // Constant variables: just an example, feel free to change them
   const double SAFETY_DISTANCE_UAVS  = 2.0;
@@ -108,7 +109,7 @@ private:
   std::tuple<int, int> getMajority(const std::vector<int> &integers);
   std::tuple<int, int> getMajority(const std::map<int, int> &integer_counts);
   Eigen::Vector3d calculateCohesion(const Perception_t &perception,const UserParams_t &user_params);
-  Eigen::Vector3d calculateAttraction(const Eigen::Vector3d &result,const UserParams_t &user_params);
+  Eigen::Vector3d calculateAttraction(const Eigen::Vector3d &result,const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateSeparation(const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params);
 };
