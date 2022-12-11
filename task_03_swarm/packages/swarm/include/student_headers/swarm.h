@@ -75,6 +75,7 @@ private:
   size_t counter{0};
   double prev_distance_to_gate {0.0};
   Eigen::Vector3d direction = Eigen::Vector3d(0,0,0); 
+  Eigen::Vector3d prev_direction = Eigen::Vector3d(0,0,0); 
   // Constant variables: just an example, feel free to change them
   const double SAFETY_DISTANCE_UAVS  = 2.0;
   const double DESIRED_DISTANCE_UAVS = 3.0;
@@ -101,6 +102,7 @@ private:
 
   unsigned int selectGateInDirection(const Direction_t &direction, const Obstacles_t &obstacles);
   unsigned int selectGateClosest(const Obstacles_t &obstacles);
+  unsigned int selectNeighClosest(const Perception_t &perception);
 
   std::vector<double> computeMutualDistances(const std::vector<Neighbor_t> &neighbors);
 
