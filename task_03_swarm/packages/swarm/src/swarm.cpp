@@ -57,16 +57,11 @@ Eigen::Vector3d Swarm::calculateCohesion(const Perception_t &perception,const Us
 
   // int idx = selectNeighClosest(perception);
   Eigen::Vector3d result (0,0,0);
-  size_t ctr = 0;
   for (auto& uav : perception.neighbors)
   {
-  //   if (uav.position.norm()>user_params.param7)
       result += uav.position;
-      ctr++;
   }
-  if (perception.neighbors.size()>0)
-    result *= (1.0/ctr);
-  
+  result *= (1.0/perception.neighbors.size());
   return result;
 }
 Eigen::Vector3d Swarm::calculateAttraction(const Eigen::Vector3d &result,const Perception_t &perception,const UserParams_t &user_params){ 
@@ -116,7 +111,6 @@ Eigen::Vector3d Swarm::calculateSeparation(const Perception_t &perception,const 
     result += final_weight*gate.second;
   }
   result *= (-1.0/(perception.neighbors.size()+2.0*perception.obstacles.gates.size()));
-  // result *= (-1.0/(perception.neighbors.size()));
   return result;
 }
 Eigen::Vector3d Swarm::calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params){
@@ -142,105 +136,100 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   // return desired velocity
   Eigen::Vector3d result;
   int int_var_1 = 0; //signal that I go through the gate
-  int int_var_2 = 0; //signal that I have selected direction
-  double double_var_3 = std::atan2(perception.target_vector[1],perception.target_vector[0]);
+  
   double neigh_0_angle = perception.neighbors[0].shared_variables.dbl;
   double neigh_1_angle = perception.neighbors[1].shared_variables.dbl;
+
+  int niegh_0_priority = perception.neighbors[0].shared_variables.int2;
+  int niegh_1_priority = perception.neighbors[1].shared_variables.int2;
+  unsigned int idx_closest = Swarm::selectNeighClosest(perception);
+  if ((perception.neighbors[idx_closest].shared_variables.int2==int_var_2)&&(perception.neighbors[idx_closest].position.norm()<3.0))
+  {
+    int_var_2++;
+  }
+  if (perception.neighbors[idx_closest].position.norm()>3.0)
+  {
+    int_var_2 = 0;
+  }
+
   unsigned int i = Swarm::selectGateClosest(perception.obstacles);
   double cur_distance_to_gate = (perception.obstacles.gates[i].first.norm()+perception.obstacles.gates[i].second.norm())/2.0;
   double threshold = user_params.param5;
   double cohesion_reduction = 1.0; 
   double avoidance_reduction = 1.0;
   double turn_on_attraction  = 1.0;
+  int neigh_flag_1,neigh_flag_2;
+
+  neigh_flag_1 = perception.neighbors[0].shared_variables.int1;
+  neigh_flag_2 = perception.neighbors[1].shared_variables.int1;
 
 
+  double double_var_3 = std::atan2(perception.target_vector[1],perception.target_vector[0]);
   if ((std::abs(double_var_3 - neigh_0_angle)>threshold) && (std::abs(double_var_3 - neigh_1_angle)>threshold))
   {
-    result = Eigen::Vector3d (cos(neigh_0_angle),sin(neigh_0_angle),0);
+    result = Eigen::Vector3d (perception.target_vector.norm()*cos(neigh_0_angle),perception.target_vector.norm()*(neigh_0_angle),0);
   }
   else
   {
     result = perception.target_vector;
   }
-
-  double result_angle = std::atan2(result(1),result(0));
-
-  // normalising the target angle
-  if (result_angle>2*M_PI)
-  {
-    result_angle -= 2*M_PI;
-  }
-  if (result_angle<0.0)
-  {
-    result_angle += 2*M_PI;
-  }
-
   
-  if (((perception.obstacles.gates[i].first.norm()+perception.obstacles.gates[i].second.norm())/2)<3.0)
+  unsigned int idx_farthest = Swarm::selectNeighFarthest(perception);
+
+  if (cur_distance_to_gate<2.0)
   {
-    //reducing avoidance 4 times whenever close to a gate
       int_var_1 = 1;
       avoidance_reduction = 0.5;
-    //reducing a
-      cohesion_reduction  = 0.2;
+      cohesion_reduction  = user_params.param1;
+      direction = prev_direction;
   }
   else
   {
+    avoidance_reduction = 1.0;
+    cohesion_reduction  = user_params.param1;
     int_var_1 = 0;  
-  }
-  int neigh_flag_1,neigh_flag_2;
-  neigh_flag_1 = perception.neighbors[0].shared_variables.int1;
-  neigh_flag_2 = perception.neighbors[1].shared_variables.int1;
-  
-  if ((int_var_1==1))
-  {
-    direction = prev_direction;
-  }
-  if (int_var_1==0)
-  { 
-    if (((result_angle>11*M_PI/6.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/6.0)))
+
+    // if max is x and x >0 ---> (1,0,0)
+    // if max is y and y >0 ---> (0,1,0)
+    // if max is x and x <0 ---> (-1,0,0)
+    // if max is y and y <0 ---> (0,-1,0)
+
+    if ((std::abs(result(0))>=std::abs(result(1))) && (result(0)>=0))
     {
       // std::cout<<"RIGHT"<<'\n';
       direction = (perception.obstacles.gates[0].first+perception.obstacles.gates[0].second)/2.0;
       direction /= direction.norm();
     }
-    if ((result_angle>M_PI/6.0) && (result_angle<=5*M_PI/6.0))
+    if ((std::abs(result(0))<std::abs(result(1))) && (result(1)>=0))
     {
       // std::cout<<"UP"<<'\n';
       direction = (perception.obstacles.gates[1].first+perception.obstacles.gates[1].second)/2.0;
       direction /= direction.norm();
     }
-    if ((result_angle>5*M_PI/6.0) && (result_angle<=7*M_PI/6.0))
+    if ((std::abs(result(0))>=std::abs(result(1))) && (result(0)<0))
     {
       // std::cout<<"LEFT"<<'\n';
       direction = (perception.obstacles.gates[2].first+perception.obstacles.gates[2].second)/2.0;
       direction /= direction.norm();
     }
-    if ((result_angle>7*M_PI/6.0) && (result_angle<=11*M_PI/6.0))
+    if ((std::abs(result(0))<std::abs(result(1))) && (result(1)<0))
     {
       // std::cout<<"DOWN"<<'\n';
       direction = (perception.obstacles.gates[3].first+perception.obstacles.gates[3].second)/2.0;
       direction /= direction.norm();
     }
-  }  
-  
-  // std::cout <<"Near or far the gate: "<<int_var_1<<'\n';
-  // if (((neigh_flag_1 == 1) && (int_var_1 == 1))||((neigh_flag_2 == 1) && (int_var_1 == 1)))
-  // {
-    // // std::cout<<"Hello,world!Neighbour!"<<'\n';
-    // srand((unsigned) time(0));
-    // double coin = (float)rand() / (float)RAND_MAX;
-    // std::cout<<"coin : "<<coin<<'\n';
-    // if (coin<0.5)
-    // {
-    //   turn_on_attraction = -1.0;
-    // }
-    // else
-    // {
-    //   turn_on_attraction = 1.0;
-    // }
-  // }
-
+  } 
+  if (int_var_2>perception.neighbors[idx_closest].shared_variables.int2)
+  {
+    // if my priority is greater than priority of closest neighbour
+    //      I do not fly to target
+    turn_on_attraction = 0.0;
+  }
+  else 
+  {
+    turn_on_attraction = 1.0;
+  }
+  std::cout<<"my priority: "<<int_var_2<<'\n';
   Eigen::Vector3d cohesion        = cohesion_reduction*user_params.param1*calculateCohesion(perception,user_params);
   Eigen::Vector3d separation      = user_params.param2*calculateSeparation(perception,user_params);
   Eigen::Vector3d avoidance       = avoidance_reduction*user_params.param3*calculateAvoidance(perception,user_params); 
@@ -257,15 +246,37 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   counter++;
   if (counter > user_params.param6)
   { 
-    prev_distance_to_gate = cur_distance_to_gate;
     counter = 0;
   }
   prev_direction = direction;
   action_handlers.shareVariables(int_var_1,int_var_2,double_var_3);
   return cohesion + attraction + separation + avoidance;
 
-
-
+  //
+    // if (((result_angle>11*M_PI/6.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/6.0)))
+    // {
+    //   // std::cout<<"RIGHT"<<'\n';
+    //   direction = (perception.obstacles.gates[0].first+perception.obstacles.gates[0].second)/2.0;
+    //   direction /= direction.norm();
+    // }
+    // if ((result_angle>M_PI/6.0) && (result_angle<=5*M_PI/6.0))
+    // {
+    //   // std::cout<<"UP"<<'\n';
+    //   direction = (perception.obstacles.gates[1].first+perception.obstacles.gates[1].second)/2.0;
+    //   direction /= direction.norm();
+    // }
+    // if ((result_angle>5*M_PI/6.0) && (result_angle<=7*M_PI/6.0))
+    // {
+    //   // std::cout<<"LEFT"<<'\n';
+    //   direction = (perception.obstacles.gates[2].first+perception.obstacles.gates[2].second)/2.0;
+    //   direction /= direction.norm();
+    // }
+    // if ((result_angle>7*M_PI/6.0) && (result_angle<=11*M_PI/6.0))
+    // {
+    //   // std::cout<<"DOWN"<<'\n';
+    //   direction = (perception.obstacles.gates[3].first+perception.obstacles.gates[3].second)/2.0;
+    //   direction /= direction.norm();
+    // }
   // if (((result_angle>7.0*M_PI/4.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/4.0)))
     // {
     //   std::cout<<"RIGHT"<<'\n';
@@ -611,6 +622,22 @@ unsigned int Swarm::selectNeighClosest(const Perception_t &perception) {
   }
 
   return min_idx;
+}
+unsigned int Swarm::selectNeighFarthest(const Perception_t &perception) {
+
+  unsigned int max_idx  = 0;
+  double       max_dist = perception.neighbors[0].position.norm();
+
+  for (unsigned int i = 0; i < perception.neighbors.size(); i++) {
+
+    const double   G_dist      = perception.neighbors[i].position.norm();
+    if (G_dist > max_dist) {
+      max_idx  = i;
+      max_dist = G_dist;
+    }
+  }
+
+  return max_idx;
 }
 
 unsigned int Swarm::selectGateClosest(const Obstacles_t &obstacles) {
