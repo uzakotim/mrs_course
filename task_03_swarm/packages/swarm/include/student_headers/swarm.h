@@ -76,6 +76,7 @@ private:
   double prev_distance_to_gate {0.0};
   Eigen::Vector3d direction = Eigen::Vector3d(0,0,0); 
   Eigen::Vector3d prev_direction = Eigen::Vector3d(0,0,0); 
+  bool no_decision;
   int int_var_2 = 0; //my priority 
   // Constant variables: just an example, feel free to change them
   const double SAFETY_DISTANCE_UAVS  = 2.0;
@@ -116,6 +117,7 @@ private:
   Eigen::Vector3d calculateAttraction(const Eigen::Vector3d &result,const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateSeparation(const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params);
+  Eigen::Vector3d calculateDirection(const Perception_t &perception, const Eigen::Vector3d & result );
 };
 
 }  // namespace task_03_swarm

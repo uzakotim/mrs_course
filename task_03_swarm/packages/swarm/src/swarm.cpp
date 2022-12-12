@@ -18,6 +18,7 @@ namespace task_03_swarm
 void Swarm::init(const double visibility_radius) {
 
   _visibility_radius_ = visibility_radius;
+  no_decision = true;
 }
 
 //}
@@ -135,8 +136,7 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
 
   // return desired velocity
   Eigen::Vector3d result;
-  int int_var_1 = 0; //signal that I go through the gate
-  
+  int int_var_1 = 0;
   double neigh_0_angle = perception.neighbors[0].shared_variables.dbl;
   double neigh_1_angle = perception.neighbors[1].shared_variables.dbl;
 
@@ -167,7 +167,7 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   double double_var_3 = std::atan2(perception.target_vector[1],perception.target_vector[0]);
   if ((std::abs(double_var_3 - neigh_0_angle)>threshold) && (std::abs(double_var_3 - neigh_1_angle)>threshold))
   {
-    result = Eigen::Vector3d (perception.target_vector.norm()*cos(neigh_0_angle),perception.target_vector.norm()*(neigh_0_angle),0);
+    result = Eigen::Vector3d (perception.target_vector.norm()*cos((neigh_0_angle+neigh_1_angle)/2.0),perception.target_vector.norm()*sin((neigh_0_angle+neigh_1_angle)/2.0),0);
   }
   else
   {
@@ -178,7 +178,6 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
 
   if (cur_distance_to_gate<2.0)
   {
-      int_var_1 = 1;
       avoidance_reduction = 0.5;
       cohesion_reduction  = user_params.param1;
       direction = prev_direction;
@@ -187,37 +186,12 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   {
     avoidance_reduction = 1.0;
     cohesion_reduction  = user_params.param1;
-    int_var_1 = 0;  
 
     // if max is x and x >0 ---> (1,0,0)
     // if max is y and y >0 ---> (0,1,0)
     // if max is x and x <0 ---> (-1,0,0)
     // if max is y and y <0 ---> (0,-1,0)
-
-    if ((std::abs(result(0))>=std::abs(result(1))) && (result(0)>=0))
-    {
-      // std::cout<<"RIGHT"<<'\n';
-      direction = (perception.obstacles.gates[0].first+perception.obstacles.gates[0].second)/2.0;
-      direction /= direction.norm();
-    }
-    if ((std::abs(result(0))<std::abs(result(1))) && (result(1)>=0))
-    {
-      // std::cout<<"UP"<<'\n';
-      direction = (perception.obstacles.gates[1].first+perception.obstacles.gates[1].second)/2.0;
-      direction /= direction.norm();
-    }
-    if ((std::abs(result(0))>=std::abs(result(1))) && (result(0)<0))
-    {
-      // std::cout<<"LEFT"<<'\n';
-      direction = (perception.obstacles.gates[2].first+perception.obstacles.gates[2].second)/2.0;
-      direction /= direction.norm();
-    }
-    if ((std::abs(result(0))<std::abs(result(1))) && (result(1)<0))
-    {
-      // std::cout<<"DOWN"<<'\n';
-      direction = (perception.obstacles.gates[3].first+perception.obstacles.gates[3].second)/2.0;
-      direction /= direction.norm();
-    }
+    direction = Swarm::calculateDirection(perception, result);
   } 
   if (int_var_2>perception.neighbors[idx_closest].shared_variables.int2)
   {
@@ -229,16 +203,21 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   {
     turn_on_attraction = 1.0;
   }
+  if (perception.neighbors[idx_farthest].position.norm()>6.0)
+  {
+    turn_on_attraction = 0.0;
+  }
   std::cout<<"my priority: "<<int_var_2<<'\n';
   Eigen::Vector3d cohesion        = cohesion_reduction*user_params.param1*calculateCohesion(perception,user_params);
   Eigen::Vector3d separation      = user_params.param2*calculateSeparation(perception,user_params);
   Eigen::Vector3d avoidance       = avoidance_reduction*user_params.param3*calculateAvoidance(perception,user_params); 
   Eigen::Vector3d attraction      = turn_on_attraction*user_params.param4*calculateAttraction(direction,perception,user_params);
 
-  action_handlers.visualizeArrow("cohesion", cohesion, Color_t{0.0, 1.0, 0.0, 1.0});
-  action_handlers.visualizeArrow("separation", separation, Color_t{1.0, 1.0, 1.0, 0.5});
-  action_handlers.visualizeArrow("avoidance", avoidance, Color_t{1.0, 0.0, 0.0, 1.0});
+  // action_handlers.visualizeArrow("cohesion", cohesion, Color_t{0.0, 1.0, 0.0, 1.0});
+  // action_handlers.visualizeArrow("separation", separation, Color_t{1.0, 1.0, 1.0, 0.5});
+  // action_handlers.visualizeArrow("avoidance", avoidance, Color_t{1.0, 0.0, 0.0, 1.0});
   action_handlers.visualizeArrow("attraction", attraction, Color_t{0.0, 0.0, 1.0, 1.0});
+  action_handlers.visualizeArrow("result", result, Color_t{1.0, 0.0, 0.0, 1.0});
 
   // use gates as virtual agents 
   // maybe to turn off some components
@@ -249,6 +228,7 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
     counter = 0;
   }
   prev_direction = direction;
+  prev_distance_to_gate = cur_distance_to_gate;
   action_handlers.shareVariables(int_var_1,int_var_2,double_var_3);
   return cohesion + attraction + separation + avoidance;
 
@@ -753,6 +733,37 @@ std::tuple<int, int> Swarm::getMajority(const std::map<int, int> &integer_counts
 
 std::tuple<int, int> Swarm::getMajority(const std::vector<int> &integers) {
   return getMajority(countIntegers(integers));
+}
+
+Eigen::Vector3d Swarm::calculateDirection(const Perception_t &perception, const Eigen::Vector3d & result )
+{
+    Eigen::Vector3d direction(0,0,0);
+    double result_angle = std::atan2(result(1),result(0));
+    if (((result_angle>11*M_PI/6.0) && (result_angle<=2*M_PI))||((result_angle>=0.0) && (result_angle<M_PI/6.0)))
+    {
+      // std::cout<<"RIGHT"<<'\n';
+      direction = (perception.obstacles.gates[0].first+perception.obstacles.gates[0].second)/2.0;
+      direction /= direction.norm();
+    }
+    if ((result_angle>M_PI/6.0) && (result_angle<=5*M_PI/6.0))
+    {
+      // std::cout<<"UP"<<'\n';
+      direction = (perception.obstacles.gates[1].first+perception.obstacles.gates[1].second)/2.0;
+      direction /= direction.norm();
+    }
+    if ((result_angle>5*M_PI/6.0) && (result_angle<=7*M_PI/6.0))
+    {
+      // std::cout<<"LEFT"<<'\n';
+      direction = (perception.obstacles.gates[2].first+perception.obstacles.gates[2].second)/2.0;
+      direction /= direction.norm();
+    }
+    if ((result_angle>7*M_PI/6.0) && (result_angle<=11*M_PI/6.0))
+    {
+      // std::cout<<"DOWN"<<'\n';
+      direction = (perception.obstacles.gates[3].first+perception.obstacles.gates[3].second)/2.0;
+      direction /= direction.norm();
+    }
+    return direction;
 }
 
 //}
