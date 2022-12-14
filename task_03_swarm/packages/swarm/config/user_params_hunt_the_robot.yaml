@@ -1,4 +1,4 @@
-param1: 0.4 #cohesion
+param1: 0.2 #cohesion
 param2: 4.0 #separation
 param3: 1.0 #avoidance
 param4: 2.0 #attraction
