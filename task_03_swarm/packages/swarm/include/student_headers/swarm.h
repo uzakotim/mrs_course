@@ -2,7 +2,7 @@
 #define SWARM_H
 
 #include <task_03_swarm/task_03_swarm.h>
-
+#include <deque>
 namespace task_03_swarm
 {
 
@@ -75,7 +75,10 @@ private:
   size_t counter{0};
   double prev_distance_to_gate {0.0};
   Eigen::Vector3d direction = Eigen::Vector3d(0,0,0); 
+  Eigen::Vector3d filtered_direction = Eigen::Vector3d(0,0,0); 
   Eigen::Vector3d prev_direction = Eigen::Vector3d(0,0,0); 
+  std::deque<int> directions;
+  int major_idx;
   bool no_decision;
   int int_var_2 = 0; //my priority 
   // Constant variables: just an example, feel free to change them
@@ -86,7 +89,7 @@ private:
 
   // | ---- Helper methods which will help you if implemented --- |
 private:
-  Direction_t targetToDirection(const Eigen::Vector3d &target_bearing);
+  int         targetToDirection(const Eigen::Vector3d &target_bearing);
   bool        robotsInIdenticalStates(const Perception_t &perception);
   bool        anyRobotInState(const Perception_t &perception, const State_t &state);
 
@@ -109,11 +112,12 @@ private:
 
   std::vector<double> computeMutualDistances(const std::vector<Neighbor_t> &neighbors);
 
-  bool                 integersAreUnique(const std::vector<int> &integers);
-  std::map<int, int>   countIntegers(const std::vector<int> &integers);
-  std::tuple<int, int> getMajority(const std::vector<int> &integers);
-  std::tuple<int, int> getMajority(const std::map<int, int> &integer_counts);
+  bool                 integersAreUnique(const std::deque<int> &integers);
+  std::map<int, int>   countIntegers(const std::deque<int> &integers);
+  // int getMajority(const std::deque<int> &integers);
+  int getMajority(const std::map<int, int> &integer_counts);
   Eigen::Vector3d calculateCohesion(const Perception_t &perception,const UserParams_t &user_params);
+  Eigen::Vector3d calculateCohesionNeigh(const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateAttraction(const Eigen::Vector3d &result,const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateSeparation(const Perception_t &perception,const UserParams_t &user_params);
   Eigen::Vector3d calculateAvoidance(const Perception_t &perception,const UserParams_t &user_params);
