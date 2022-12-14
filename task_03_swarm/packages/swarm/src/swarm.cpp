@@ -197,13 +197,13 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
     {
       directions.pop_front();
     }
+    if (major_idx != 0)
+    {
+      filtered_direction = (perception.obstacles.gates[major_idx-1].first+perception.obstacles.gates[major_idx-1].second)/2.0;
+      filtered_direction /= filtered_direction.norm();
+    }
   }
 
-  if (major_idx != 0)
-  {
-    filtered_direction = (perception.obstacles.gates[major_idx-1].first+perception.obstacles.gates[major_idx-1].second)/2.0;
-    filtered_direction /= filtered_direction.norm();
-  }
 
   Eigen::Vector3d cohesion = cohesion_reduction*user_params.param1*calculateCohesion(perception,user_params);
   if (int_var_2>(perception.neighbors[idx_closest].shared_variables.int2))
@@ -219,6 +219,11 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   {
     turn_on_attraction = 0.0;
   }
+  if (((perception.obstacles.gates[i].first+perception.obstacles.gates[i].second)/2.0).norm()<=1.5)
+  {
+    filtered_direction = prev_direction;
+    turn_on_attraction = 0.5;
+  }
   Eigen::Vector3d separation      = user_params.param2*calculateSeparation(perception,user_params);
   Eigen::Vector3d avoidance       = avoidance_reduction*user_params.param3*calculateAvoidance(perception,user_params); 
   Eigen::Vector3d attraction      = turn_on_attraction*user_params.param4*calculateAttraction(filtered_direction,perception,user_params);
@@ -229,7 +234,7 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   action_handlers.visualizeArrow("attraction", filtered_direction, Color_t{0.0, 0.0, 1.0, 1.0});
 
   counter++;
-  prev_direction = direction;
+  prev_direction = filtered_direction;
   prev_distance_to_gate = cur_distance_to_gate;
   action_handlers.shareVariables(int_var_1,int_var_2,double_var_3);
   return cohesion + attraction + separation + avoidance;
