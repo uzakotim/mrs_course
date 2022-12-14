@@ -186,25 +186,29 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   
   unsigned int idx_farthest = Swarm::selectNeighFarthest(perception);
 
+  // until x or y is close to 1--> keep on
+  // if x or y is close to 1   --> change direction
   direction = Swarm::calculateDirection(perception, result);
   directions.push_back(targetToDirection(direction));
   if (counter >user_params.param6)
   {
-    std::map<int,int> direction_map = countIntegers(directions);
-    major_idx = getMajority(direction_map);
-    counter-=user_params.param6/2;
-    for (size_t k = 0;k<user_params.param6/2;k++)
-    {
-      directions.pop_front();
-    }
-    if (major_idx != 0)
-    {
-      filtered_direction = (perception.obstacles.gates[major_idx-1].first+perception.obstacles.gates[major_idx-1].second)/2.0;
-      filtered_direction /= filtered_direction.norm();
-    }
+      std::map<int,int> direction_map = countIntegers(directions);
+      major_idx = getMajority(direction_map);
+      counter-=user_params.param6/2;
+      for (size_t k = 0;k<user_params.param6/2;k++)
+      {
+        directions.pop_front();
+      }
+      if (major_idx != 0)
+      {
+        if((0.8<std::abs(result(0))&&(std::abs(result(0))<1.0)) || (0.8<std::abs(result(1))&&(std::abs(result(1))<1.0))||(filtered_direction.norm()==0))
+        {
+          // change of direction
+          filtered_direction = (perception.obstacles.gates[major_idx-1].first+perception.obstacles.gates[major_idx-1].second)/2.0;
+          filtered_direction /= filtered_direction.norm();
+        }
+      }
   }
-
-
   Eigen::Vector3d cohesion = cohesion_reduction*user_params.param1*calculateCohesion(perception,user_params);
   if (int_var_2>(perception.neighbors[idx_closest].shared_variables.int2))
   {
