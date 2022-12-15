@@ -1,10 +1,10 @@
 param1: 0.3  #cohesion
 param2: 2.0  #separation
-param3: 0.75  #avoidance
+param3: 0.75 #avoidance
 param4: 5.0  #attraction
 param5: 1.0  #theshold angle consensus;
-param6: 10    # number of counts after direction selection
-param7: 0.66 # percentage to neighbour
+param6: 4   # number of counts after direction selection
+param7: 0.4 # direction selection threshold
 param8: 1.0  # separation drones
 param9: 0.5  # separation gates
 

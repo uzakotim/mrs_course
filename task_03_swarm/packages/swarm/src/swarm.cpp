@@ -20,6 +20,9 @@ void Swarm::init(const double visibility_radius) {
   _visibility_radius_ = visibility_radius;
   no_decision = true;
   major_idx = 0;
+  prev_major_idx = 0;
+  result = Eigen::Vector3d(0,0,0);
+  prev_result = Eigen::Vector3d(0,0,0);
 }
 
 //}
@@ -144,8 +147,6 @@ Eigen::Vector3d Swarm::calculateAvoidance(const Perception_t &perception,const U
 Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserParams_t &user_params, const ActionHandlers_t &action_handlers) {
 
   // return desired velocity
-  Eigen::Vector3d result;
-  int int_var_1 = 0;
   double neigh_0_angle = perception.neighbors[0].shared_variables.dbl;
   double neigh_1_angle = perception.neighbors[1].shared_variables.dbl;
 
@@ -185,28 +186,114 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   }
   
   unsigned int idx_farthest = Swarm::selectNeighFarthest(perception);
-
-  // until x or y is close to 1--> keep on
-  // if x or y is close to 1   --> change direction
+  double cur_x = std::abs(result(0));
+  double cur_y = std::abs(result(1));
+  double gate_threshold = 1.5;
+  
   direction = Swarm::calculateDirection(perception, result);
   directions.push_back(targetToDirection(direction));
   if (counter >user_params.param6)
   {
       std::map<int,int> direction_map = countIntegers(directions);
-      major_idx = getMajority(direction_map);
+      if ((cur_y>user_params.param7) && ((prev_major_idx == 1)||(prev_major_idx==3))) 
+      {   
+        if (cur_x>user_params.param7)
+        {
+          major_idx = prev_major_idx;
+        }
+        else
+        {
+          if (cur_distance_to_gate>gate_threshold)
+            major_idx = getMajority(direction_map);
+        }
+      }
+      if ((cur_y<=user_params.param7) && ((prev_major_idx == 1)||(prev_major_idx==3))) 
+      {   
+        if (cur_x>user_params.param7)
+        {
+            //problem x
+            if (cur_distance_to_gate>gate_threshold)
+            {
+              if (result(0)>0)
+              {
+                major_idx = 1;
+              }
+              else 
+              {
+                major_idx = 3;
+              }
+            }
+        }
+        else
+        {
+          filtered_direction = Eigen::Vector3d(0,0,0);
+          major_idx = 0;
+          std::cout<<"Found robot!!"<<'\n';
+        }
+      }
+
+      if ((cur_y>user_params.param7) && ((prev_major_idx == 2)||(prev_major_idx==4))) 
+      {   
+        if (cur_x>user_params.param7)
+        {
+          if (cur_distance_to_gate>gate_threshold)
+            major_idx = getMajority(direction_map);
+        }
+        else
+        {
+          //problem y
+          if (cur_distance_to_gate>gate_threshold)
+          {
+            if (result(1)>0)
+            {
+              major_idx = 2;
+            }
+            else 
+            {
+              major_idx = 4;
+            }
+          }
+        }
+      }
+
+      if ((cur_y<=user_params.param7) && ((prev_major_idx == 2)||(prev_major_idx==4))) 
+      {      
+        if (cur_x>user_params.param7)
+        {
+          if (cur_distance_to_gate>gate_threshold)
+            major_idx = getMajority(direction_map);
+        }
+        else
+        {
+          filtered_direction = Eigen::Vector3d(0,0,0);
+          major_idx = 0;
+          std::cout<<"Found robot!!"<<'\n';
+        }
+      }
+      if (prev_major_idx==0)
+      {
+        major_idx = getMajority(direction_map);
+      }
+
+      std::cout<<"current direction: "<<major_idx<<'\n';
+      int_var_1 = major_idx;
+      std::deque<int> agreement = {major_idx,perception.neighbors[0].shared_variables.int1,perception.neighbors[1].shared_variables.int1};
+      std::map<int,int> agreement_map = countIntegers(agreement);
+      if (cur_distance_to_gate>1.5)
+      {
+        major_idx = getMajority(agreement_map);
+        std::cout<<"agreed direction:" <<major_idx<<'\n';
+      }
+      if (major_idx != 0)
+      { 
+          filtered_direction = (perception.obstacles.gates[major_idx-1].first+perception.obstacles.gates[major_idx-1].second)/2.0;
+          filtered_direction /= filtered_direction.norm();
+      }
+      // resetting counter and directions
       counter-=user_params.param6/2;
       for (size_t k = 0;k<user_params.param6/2;k++)
       {
         directions.pop_front();
-      }
-      if (major_idx != 0)
-      {
-        if((0.8<std::abs(result(0))&&(std::abs(result(0))<1.0)) || (0.8<std::abs(result(1))&&(std::abs(result(1))<1.0))||(filtered_direction.norm()==0))
-        {
-          // change of direction
-          filtered_direction = (perception.obstacles.gates[major_idx-1].first+perception.obstacles.gates[major_idx-1].second)/2.0;
-          filtered_direction /= filtered_direction.norm();
-        }
       }
   }
   Eigen::Vector3d cohesion = cohesion_reduction*user_params.param1*calculateCohesion(perception,user_params);
@@ -230,16 +317,19 @@ Eigen::Vector3d Swarm::updateAction(const Perception_t &perception, const UserPa
   }
   Eigen::Vector3d separation      = user_params.param2*calculateSeparation(perception,user_params);
   Eigen::Vector3d avoidance       = avoidance_reduction*user_params.param3*calculateAvoidance(perception,user_params); 
+
   Eigen::Vector3d attraction      = turn_on_attraction*user_params.param4*calculateAttraction(filtered_direction,perception,user_params);
 
   action_handlers.visualizeArrow("cohesion", cohesion, Color_t{0.0, 1.0, 0.0, 1.0});
   action_handlers.visualizeArrow("separation", separation, Color_t{1.0, 1.0, 1.0, 0.5});
   action_handlers.visualizeArrow("avoidance", avoidance, Color_t{1.0, 0.0, 0.0, 1.0});
-  action_handlers.visualizeArrow("attraction", filtered_direction, Color_t{0.0, 0.0, 1.0, 1.0});
+  action_handlers.visualizeArrow("direction", filtered_direction, Color_t{0.0, 0.0, 1.0, 1.0});
 
   counter++;
+  prev_major_idx = major_idx;
   prev_direction = filtered_direction;
   prev_distance_to_gate = cur_distance_to_gate;
+  prev_result = result;
   action_handlers.shareVariables(int_var_1,int_var_2,double_var_3);
   return cohesion + attraction + separation + avoidance;
 }

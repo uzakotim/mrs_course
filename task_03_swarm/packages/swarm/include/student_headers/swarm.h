@@ -79,8 +79,12 @@ private:
   Eigen::Vector3d prev_direction = Eigen::Vector3d(0,0,0); 
   std::deque<int> directions;
   int major_idx;
+  int prev_major_idx;
   bool no_decision;
   int int_var_2 = 0; //my priority 
+  int int_var_1 = 0; //my direction
+  Eigen::Vector3d result;
+  Eigen::Vector3d prev_result;
   // Constant variables: just an example, feel free to change them
   const double SAFETY_DISTANCE_UAVS  = 2.0;
   const double DESIRED_DISTANCE_UAVS = 3.0;
